@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Mis datos - {{ boleto.titulo }}</title>
+
+    <meta name="theme-color" content="#0a0d18">
+    <meta name="color-scheme" content="dark">
+
+    <style>
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #0a0d18;
+            color: #e8ecf4;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        header {
+            background: linear-gradient(135deg, #1e1b4b, #0a0d18);
+            border-bottom: 1px solid #232942;
+            color: white;
+            padding: 22px;
+            text-align: center;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 25px;
+            background: linear-gradient(135deg, #ffffff, #a5b4fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .contenedor {
+            width: 100%;
+            max-width: 600px;
+            margin: 30px auto;
+            padding: 0 15px;
+        }
+
+        .tarjeta {
+            background: #141827;
+            border: 1px solid #232942;
+            border-radius: 20px;
+            padding: 30px;
+        }
+
+        .titulo {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #e8ecf4;
+        }
+
+        .subtitulo {
+            text-align: center;
+            color: #8a93ab;
+            margin-bottom: 25px;
+            font-size: 15px;
+        }
+
+        .boleto-info {
+            text-align: center;
+            background: rgba(59, 130, 246, 0.08);
+            border: 2px dashed #3b82f6;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 25px;
+        }
+
+        .boleto-info small {
+            display: block;
+            color: #8a93ab;
+            margin-bottom: 6px;
+            font-size: 12px;
+            letter-spacing: 1px;
+        }
+
+        .boleto-numero {
+            font-size: 36px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 7px;
+            font-size: 15px;
+            color: #e8ecf4;
+        }
+
+        input {
+            width: 100%;
+            padding: 14px;
+            background: #0a0d18;
+            border: 1px solid #232942;
+            border-radius: 10px;
+            font-size: 16px;
+            font-family: inherit;
+            margin-bottom: 5px;
+            color: #e8ecf4;
+            transition: 0.2s;
+        }
+
+        input::placeholder {
+            color: #4b5563;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+
+        .ayuda {
+            display: block;
+            color: #8a93ab;
+            font-size: 13px;
+            margin-bottom: 20px;
+        }
+
+        .boton {
+            width: 100%;
+            border: none;
+            border-radius: 12px;
+            padding: 16px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            font-size: 17px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+            transition: 0.2s;
+        }
+
+        .boton:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 28px rgba(16, 185, 129, 0.6);
+        }
+
+        .flash {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .volver {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #a5b4fc;
+            text-decoration: none;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        .volver:hover { color: #8b5cf6; }
+
+        .aviso-privacidad {
+            margin-top: 20px;
+            padding: 12px;
+            background: rgba(59, 130, 246, 0.05);
+            border: 1px solid #232942;
+            border-radius: 10px;
+            font-size: 13px;
+            color: #8a93ab;
+            text-align: center;
+            line-height: 1.5;
+        }
+
+        .aviso-privacidad a {
+            color: #a5b4fc;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<header>
+    <h1>📝 Últimos datos</h1>
+</header>
+
+
+<div class="contenedor">
+
+    {% with mensajes = get_flashed_messages() %}
+        {% if mensajes %}
+            {% for mensaje in mensajes %}
+                <div class="flash">{{ mensaje }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+
+    <div class="tarjeta">
+
+        <div class="titulo">Registra tus datos</div>
+
+        <div class="subtitulo">
+            Estás a un paso de completar tu participación.
+        </div>
+
+
+        <div class="boleto-info">
+            <small>TU BOLETO</small>
+            <div class="boleto-numero">#{{ boleto.numero }}</div>
+        </div>
+
+
+        <form method="POST" action="{{ url_for('guardar_datos_participante', reserva_token=boleto.reserva_token) }}">
+
+            <label for="nombre">Nombre completo *</label>
+            <input
+                type="text"
+                id="nombre"
+                name="nombre"
+                maxlength="200"
+                required
+                value="{{ boleto.nombre or '' }}"
+                placeholder="Ej. Juan Pérez López"
+                autocomplete="name"
+            >
+            <span class="ayuda">
+                Lo usaremos para identificar tu participación en caso de que ganes.
+            </span>
+
+
+            <label for="numero_especial">Número especial (opcional)</label>
+            <input
+                type="text"
+                id="numero_especial"
+                name="numero_especial"
+                maxlength="50"
+                value="{{ boleto.numero_especial or '' }}"
+                placeholder="Ej. 7, 21, 777..."
+            >
+            <span class="ayuda">
+                Un número extra que juegas aparte del boleto. Si no lo llenas, no pasa nada.
+            </span>
+
+
+            <button type="submit" class="boton">
+                ✅ Guardar y ver mi comprobante
+            </button>
+
+        </form>
+
+
+        <div class="aviso-privacidad">
+            Tus datos se usarán únicamente para identificar tu participación.
+            Consulta nuestro <a href="{{ url_for('privacidad') }}">aviso de privacidad</a>.
+        </div>
+
+    </div>
+
+
+    <a class="volver" href="{{ url_for('reserva', reserva_token=boleto.reserva_token) }}">
+        ← Volver a mi progreso
+    </a>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Preguntas Frecuentes | appazueta.lat</title>
+
+    <meta name="description" content="Resolvemos las dudas más comunes sobre nuestros sorteos gratuitos: cómo participar, cómo se eligen los ganadores y más.">
+
+    <meta name="theme-color" content="#0a0d18">
+    <meta name="color-scheme" content="dark">
+
+    <link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Sorteos">
+
+    <style>
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #0a0d18;
+            color: #e8ecf4;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        header {
+            background: linear-gradient(135deg, #1e1b4b, #0a0d18);
+            border-bottom: 1px solid #232942;
+            padding: 25px 20px;
+            text-align: center;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 28px;
+            background: linear-gradient(135deg, #ffffff, #a5b4fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .contenedor {
+            width: 100%;
+            max-width: 780px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .intro {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .intro h2 {
+            font-size: 26px;
+            margin: 0 0 12px;
+            color: #e8ecf4;
+        }
+
+        .intro p {
+            color: #8a93ab;
+            font-size: 16px;
+            line-height: 1.6;
+            max-width: 520px;
+            margin: 0 auto;
+        }
+
+        .badge {
+            display: inline-block;
+            background: rgba(16, 185, 129, 0.12);
+            color: #34d399;
+            padding: 6px 14px;
+            border-radius: 50px;
+            font-size: 13px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        /* ============================================
+           ACORDEÓN
+        ============================================ */
+
+        .faq-lista {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .faq-item {
+            background: #141827;
+            border: 1px solid #232942;
+            border-radius: 14px;
+            overflow: hidden;
+            transition: border-color 0.2s;
+        }
+
+        .faq-item:hover {
+            border-color: #3b82f6;
+        }
+
+        .faq-item.abierto {
+            border-color: #8b5cf6;
+            box-shadow: 0 8px 24px rgba(139, 92, 246, 0.15);
+        }
+
+        .faq-pregunta {
+            width: 100%;
+            padding: 20px 22px;
+            background: transparent;
+            border: none;
+            color: #e8ecf4;
+            font-family: inherit;
+            font-size: 16px;
+            font-weight: bold;
+            text-align: left;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            transition: 0.2s;
+        }
+
+        .faq-pregunta:hover {
+            color: #a5b4fc;
+        }
+
+        .faq-icono {
+            flex-shrink: 0;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: bold;
+            transition: transform 0.3s;
+        }
+
+        .faq-item.abierto .faq-icono {
+            transform: rotate(45deg);
+        }
+
+        .faq-respuesta {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.35s ease, padding 0.35s ease;
+            padding: 0 22px;
+        }
+
+        .faq-item.abierto .faq-respuesta {
+            max-height: 500px;
+            padding: 0 22px 22px;
+        }
+
+        .faq-respuesta p {
+            margin: 0 0 12px;
+            color: #8a93ab;
+            line-height: 1.7;
+            font-size: 15px;
+        }
+
+        .faq-respuesta p:last-child {
+            margin-bottom: 0;
+        }
+
+        .faq-respuesta strong {
+            color: #e8ecf4;
+        }
+
+        .faq-respuesta a {
+            color: #a5b4fc;
+            text-decoration: none;
+        }
+
+        .faq-respuesta a:hover {
+            color: #8b5cf6;
+            text-decoration: underline;
+        }
+
+        /* ============================================
+           CTA FINAL
+        ============================================ */
+
+        .cta-final {
+            margin-top: 50px;
+            padding: 35px 25px;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(139, 92, 246, 0.08));
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 18px;
+            text-align: center;
+        }
+
+        .cta-final h3 {
+            margin: 0 0 12px;
+            font-size: 20px;
+            color: #e8ecf4;
+        }
+
+        .cta-final p {
+            color: #8a93ab;
+            margin: 0 0 20px;
+            line-height: 1.6;
+        }
+
+        .cta-boton {
+            display: inline-block;
+            padding: 14px 28px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: white;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: bold;
+            font-size: 16px;
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+            transition: 0.2s;
+        }
+
+        .cta-boton:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 28px rgba(139, 92, 246, 0.6);
+        }
+
+        /* ============================================
+           FOOTER
+        ============================================ */
+
+        footer {
+            background: #050810;
+            border-top: 1px solid #232942;
+            color: #8a93ab;
+            padding: 40px 20px 30px;
+            text-align: center;
+            font-size: 14px;
+            margin-top: 60px;
+        }
+
+        .footer-links {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 8px 20px;
+        }
+
+        .footer-links a {
+            color: #a5b4fc;
+            text-decoration: none;
+            transition: 0.2s;
+        }
+
+        .footer-links a:hover {
+            color: #8b5cf6;
+        }
+
+        @media (max-width: 600px) {
+
+            .intro h2 { font-size: 22px; }
+            .faq-pregunta { font-size: 15px; padding: 18px; }
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<header>
+    <h1>❓ Preguntas Frecuentes</h1>
+</header>
+
+
+<div class="contenedor">
+
+    <div class="intro">
+
+        <div class="badge">✨ RESPUESTAS CLARAS</div>
+
+        <h2>Todo lo que necesitas saber</h2>
+
+        <p>
+            Resolvemos las dudas más comunes sobre nuestros
+            sorteos gratuitos. Si no encuentras tu respuesta,
+            puedes <a href="{{ url_for('contacto') }}" style="color:#a5b4fc;">contactarnos</a>.
+        </p>
+
+    </div>
+
+
+    <div class="faq-lista">
+
+
+        <div class="faq-item">
+
+            <button class="faq-pregunta" onclick="toggleFaq(this)">
+
+                ¿Cómo participo en un sorteo?
+
+                <span class="faq-icono">+</span>
+
+            </button>
+
+            <div class="faq-respuesta">
+
+                <p>
+                    Es muy fácil, solo 3 pasos:
+                </p>
+
+                <p>
+                    <strong>1.</strong> Elige un sorteo activo y reserva tu número de boleto favorito.<br>
+                    <strong>2.</strong> Mira 5 videos cortos desde tu celular o computadora.<br>
+                    <strong>3.</strong> Registra tu nombre y listo. Ya estás participando.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="faq-item">
+
+            <button class="faq-pregunta" onclick="toggleFaq(this)">
+
+                ¿Cuánto cuesta participar?
+
+                <span class="faq-icono">+</span>
+
+            </button>
+
+            <div class="faq-respuesta">
+
+                <p>
+                    <strong>Nada. Participar es 100% gratuito.</strong>
+                    Nunca te pediremos dinero, tarjetas de crédito
+                    ni datos bancarios para participar en nuestros sorteos.
+                </p>
+
+                <p>
+                    El único "costo" es ver algunos videos publicitarios
+                    cortos que nos permiten cubrir los gastos del sitio
+                    y los premios.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="faq-item">
+
+            <button class="faq-pregunta" onclick="toggleFaq(this)">
+
+                ¿Cómo se eligen a los ganadores?
+
+                <span class="faq-icono">+</span>
+
+            </button>
+
+            <div class="faq-respuesta">
+
+                <p>
+                    Una vez que termina el período de participación,
+                    realizamos un sorteo <strong>en vivo por nuestras
+                    redes sociales</strong> usando una tómbola digital
+                    o física.
+                </p>
+
+                <p>
+                    El ganador se elige al azar entre todos los
+                    boletos que completaron el proceso de participación.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="faq-item">
+
+            <button class="faq-pregunta" onclick="toggleFaq(this)">
+
+                ¿Cómo me avisan si gano?
+
+                <span class="faq-icono">+</span>
+
+            </button>
+
+            <div class="faq-respuesta">
+
+                <p>
+                    Si ganas, te contactaremos usando el nombre
+                    que registraste. Además publicaremos el resultado
+                    en nuestras redes sociales y en el sitio.
+                </p>
+
+                <p>
+                    <strong>Importante:</strong> verifica que el nombre
+                    que registres sea el correcto y que puedas
+                    comprobarlo al momento de reclamar el premio.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="faq-item">
+
+            <button class="faq-pregunta" onclick="toggleFaq(this)">
+
+                ¿Por qué tengo que ver videos?
+
+                <span class="faq-icono">+</span>
+
+            </button>
+
+            <div class="faq-respuesta">
+
+                <p>
+                    Los videos publicitarios son la forma en que
+                    financiamos el sitio y los premios. Google nos
+                    paga una pequeña cantidad por cada video que
+                    alguien ve completo.
+                </p>
+
+                <p>
+                    Así podemos mantener los sorteos <strong>gratis
+                    para todos</strong>, sin pedir dinero ni cobrar
+                    boletos.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="faq-item">
+
+            <button class="faq-pregunta" onclick="toggleFaq(this)">
+
+                ¿Puedo participar más de una vez?
+
+                <span class="faq-icono">+</span>
+
+            </button>
+
+            <div class="faq-respuesta">
+
+                <p>
+                    Puedes reservar <strong>un boleto por sorteo</strong>
+                    para dar oportunidad a más personas. Si reservas
+                    un boleto y no completas los videos en 1 hora,
+                    el boleto se libera automáticamente para que
+                    otra persona pueda usarlo.
+                </p>
+
+                <p>
+                    Si quieres participar en más de un sorteo al
+                    mismo tiempo, ¡adelante! Cada sorteo es independiente.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="faq-item">
+
+            <button class="faq-pregunta" onclick="toggleFaq(this)">
+
+                ¿Qué pasa si no completo los 5 videos?
+
+                <span class="faq-icono">+</span>
+
+            </button>
+
+            <div class="faq-respuesta">
+
+                <p>
+                    Tu boleto se libera automáticamente después de
+                    <strong>1 hora</strong> de inactividad para que
+                    otra persona pueda reservarlo.
+                </p>
+
+                <p>
+                    No pasa nada malo, simplemente puedes volver a
+                    intentarlo cuando quieras eligiendo otro boleto
+                    disponible.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="faq-item">
+
+            <button class="faq-pregunta" onclick="toggleFaq(this)">
+
+                ¿Necesito crear una cuenta?
+
+                <span class="faq-icono">+</span>
+
+            </button>
+
+            <div class="faq-respuesta">
+
+                <p>
+                    <strong>No.</strong> No necesitas registrarte ni
+                    crear contraseñas. Solo eliges tu boleto,
+                    registras tu nombre al final y guardamos tu
+                    participación con un código único.
+                </p>
+
+                <p>
+                    Guarda tu código de participación para poder
+                    consultar tu boleto más adelante.
+                </p>
+
+            </div>
+
+        </div>
+
+
+    </div>
+
+
+    <!-- ============================================
+         CTA FINAL
+    ============================================ -->
+
+    <div class="cta-final">
+
+        <h3>¿Listo para participar?</h3>
+
+        <p>
+            Elige un sorteo activo y comienza ahora mismo.
+            Sin pagos, sin registros, sin complicaciones.
+        </p>
+
+        <a href="{{ url_for('rifas') }}" class="cta-boton">
+            🎁 Ver sorteos activos
+        </a>
+
+    </div>
+
+</div>
+
+
+<footer>
+
+    <div class="footer-links">
+        <a href="{{ '/' }}">Inicio</a>
+        <a href="{{ url_for('consultar_participacion') }}">Consultar</a>
+        <a href="{{ url_for('rifas') }}">Sorteos</a>
+        <a href="{{ url_for('faq') }}">FAQ</a>
+        <a href="{{ url_for('ganadores') }}">Ganadores</a>
+        <a href="{{ url_for('privacidad') }}">Aviso de privacidad</a>
+        <a href="{{ url_for('terminos') }}">Términos y condiciones</a>
+        <a href="{{ url_for('contacto') }}">Contacto</a>
+    </div>
+
+    <div style="opacity:0.6; font-size:13px;">
+        © 2026 appazueta.lat · Todos los derechos reservados
+    </div>
+
+</footer>
+
+
+<script>
+
+    function toggleFaq(boton) {
+
+        const item = boton.parentElement;
+
+        // Cerrar otros abiertos (opcional, tipo acordeón)
+        const itemsAbiertos = document.querySelectorAll('.faq-item.abierto');
+
+        itemsAbiertos.forEach(function(abierto) {
+            if (abierto !== item) {
+                abierto.classList.remove('abierto');
+            }
+        });
+
+        // Alternar el actual
+        item.classList.toggle('abierto');
+
+    }
+
+</script>
+
+</body>
+
+</html>

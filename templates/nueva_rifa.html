@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        {% if modo_edicion %}
+            Editar Rifa
+        {% else %}
+            Nueva Rifa
+        {% endif %}
+    </title>
+
+
+    <style>
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            color: #222;
+        }
+
+        header {
+            background: #111827;
+            color: white;
+            padding: 20px;
+        }
+
+        header .contenedor {
+            max-width: 900px;
+            margin: auto;
+        }
+
+        main {
+            max-width: 900px;
+            margin: 30px auto;
+            padding: 20px;
+        }
+
+        .formulario {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 4px 18px rgba(0,0,0,0.08);
+        }
+
+        .campo {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 7px;
+            font-weight: bold;
+        }
+
+        .ayuda {
+            display: block;
+            margin-top: 5px;
+            color: #6b7280;
+            font-size: 13px;
+        }
+
+        input,
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 9px;
+            font-size: 15px;
+            font-family: Arial, sans-serif;
+        }
+
+        input:focus,
+        textarea:focus {
+            outline: none;
+            border-color: #1877f2;
+            box-shadow: 0 0 0 2px rgba(24,119,242,0.1);
+        }
+
+        textarea {
+            min-height: 130px;
+            resize: vertical;
+        }
+
+        .fila {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .acciones {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .boton {
+            border: none;
+            padding: 13px 20px;
+            border-radius: 9px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 15px;
+            text-decoration: none;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .guardar {
+            background: #1877f2;
+            color: white;
+        }
+
+        .guardar:hover {
+            background: #0d65d9;
+        }
+
+        .cancelar {
+            background: #e5e7eb;
+            color: #222;
+        }
+
+        .cancelar:hover {
+            background: #d1d5db;
+        }
+
+        .estado-actual {
+            background: #f9fafb;
+            padding: 12px;
+            border-radius: 9px;
+            margin-bottom: 25px;
+        }
+
+        .estado-actual strong {
+            text-transform: uppercase;
+        }
+
+        @media (max-width: 700px) {
+
+            .fila {
+                grid-template-columns: 1fr;
+                gap: 0;
+            }
+
+            .formulario {
+                padding: 20px;
+            }
+
+            .acciones {
+                flex-direction: column;
+            }
+
+            .boton {
+                width: 100%;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+
+<header>
+
+    <div class="contenedor">
+
+        <h1>
+
+            {% if modo_edicion %}
+
+                ✏️ Editar Rifa
+
+            {% else %}
+
+                🎟️ Nueva Rifa
+
+            {% endif %}
+
+        </h1>
+
+    </div>
+
+</header>
+
+
+<main>
+
+
+    <div class="formulario">
+
+
+        {% if modo_edicion %}
+
+            <div class="estado-actual">
+
+                Estado actual:
+
+                <strong>
+                    {{ rifa.estado }}
+                </strong>
+
+            </div>
+
+        {% endif %}
+
+
+        <form
+            method="POST"
+
+            {% if modo_edicion %}
+
+                action="{{ url_for('actualizar_rifa', rifa_id=rifa.id) }}"
+
+            {% else %}
+
+                action="{{ url_for('crear_rifa') }}"
+
+            {% endif %}
+        >
+
+
+            <!-- TITULO -->
+
+            <div class="campo">
+
+                <label for="titulo">
+                    Título de la rifa
+                </label>
+
+                <input
+                    type="text"
+                    id="titulo"
+                    name="titulo"
+                    maxlength="200"
+                    placeholder="Ej. Canasta Navideña"
+
+                    {% if modo_edicion %}
+                        value="{{ rifa.titulo }}"
+                    {% endif %}
+
+                    required
+                >
+
+            </div>
+
+
+            <!-- DESCRIPCION -->
+
+            <div class="campo">
+
+                <label for="descripcion">
+                    Descripción
+                </label>
+
+                <textarea
+                    id="descripcion"
+                    name="descripcion"
+                    placeholder="Describe detalladamente el premio..."
+                >{% if modo_edicion %}{{ rifa.descripcion or '' }}{% endif %}</textarea>
+
+            </div>
+
+
+            <!-- IMAGEN -->
+
+            <div class="campo">
+
+                <label for="imagen_url">
+                    URL de la imagen
+                </label>
+
+                <input
+                    type="url"
+                    id="imagen_url"
+                    name="imagen_url"
+                    placeholder="https://..."
+
+                    {% if modo_edicion %}
+                        value="{{ rifa.imagen_url or '' }}"
+                    {% endif %}
+                >
+
+                <span class="ayuda">
+                    Por ahora utilizaremos una URL. Más adelante podemos integrar Cloudinary para subir imágenes directamente.
+                </span>
+
+            </div>
+
+
+            <!-- BOLETOS Y PRECIO -->
+
+            <div class="fila">
+
+
+                <div class="campo">
+
+                    <label for="cantidad_boletos">
+                        Cantidad de boletos
+                    </label>
+
+                    <input
+                        type="number"
+                        id="cantidad_boletos"
+                        name="cantidad_boletos"
+                        min="1"
+                        step="1"
+
+                        {% if modo_edicion %}
+
+                            value="{{ rifa.cantidad_boletos }}"
+
+                        {% else %}
+
+                            value="1000"
+
+                        {% endif %}
+
+                        required
+                    >
+
+                    <span class="ayuda">
+                        Ejemplo: 1000 boletos.
+                    </span>
+
+                </div>
+
+
+                <div class="campo">
+
+                    <label for="precio_boleto">
+                        Precio del boleto
+                    </label>
+
+                    <input
+                        type="number"
+                        id="precio_boleto"
+                        name="precio_boleto"
+                        min="0"
+                        step="0.01"
+
+                        {% if modo_edicion %}
+
+                            value="{{ rifa.precio_boleto }}"
+
+                        {% else %}
+
+                            value="10.00"
+
+                        {% endif %}
+
+                        required
+                    >
+
+                    <span class="ayuda">
+                        Precio que utilizaremos cuando agreguemos el método de pago.
+                    </span>
+
+                </div>
+
+
+            </div>
+
+
+            <!-- FECHAS -->
+
+            <div class="fila">
+
+
+                <div class="campo">
+
+                    <label for="fecha_inicio">
+                        Fecha de inicio
+                    </label>
+
+                    <input
+                        type="datetime-local"
+                        id="fecha_inicio"
+                        name="fecha_inicio"
+
+                        {% if modo_edicion and rifa.fecha_inicio %}
+                            value="{{ rifa.fecha_inicio.strftime('%Y-%m-%dT%H:%M') }}"
+                        {% endif %}
+                    >
+
+                </div>
+
+
+                <div class="campo">
+
+                    <label for="fecha_fin">
+                        Fecha de finalización
+                    </label>
+
+                    <input
+                        type="datetime-local"
+                        id="fecha_fin"
+                        name="fecha_fin"
+
+                        {% if modo_edicion and rifa.fecha_fin %}
+                            value="{{ rifa.fecha_fin.strftime('%Y-%m-%dT%H:%M') }}"
+                        {% endif %}
+                    >
+
+                </div>
+
+
+            </div>
+
+
+            <!-- FECHA SORTEO -->
+
+            <div class="campo">
+
+                <label for="fecha_sorteo">
+                    Fecha del sorteo
+                </label>
+
+                <input
+                    type="datetime-local"
+                    id="fecha_sorteo"
+                    name="fecha_sorteo"
+
+                    {% if modo_edicion and rifa.fecha_sorteo %}
+                        value="{{ rifa.fecha_sorteo.strftime('%Y-%m-%dT%H:%M') }}"
+                    {% endif %}
+                >
+
+            </div>
+
+
+            <!-- BOTONES -->
+
+            <div class="acciones">
+
+
+                <button
+                    type="submit"
+                    class="boton guardar"
+                >
+
+                    {% if modo_edicion %}
+
+                        💾 GUARDAR CAMBIOS
+
+                    {% else %}
+
+                        🎟️ CREAR RIFA
+
+                    {% endif %}
+
+                </button>
+
+
+                <a
+                    href="{{ url_for('admin_rifas') }}"
+                    class="boton cancelar"
+                >
+                    CANCELAR
+                </a>
+
+
+            </div>
+
+
+        </form>
+
+
+    </div>
+
+
+</main>
+
+
+</body>
+
+</html>

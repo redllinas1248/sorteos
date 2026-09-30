@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Participantes - {{ rifa.titulo }}</title>
+
+    <style>
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #0a0d18;
+            color: #e8ecf4;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        header {
+            background: #141827;
+            border-bottom: 1px solid #232942;
+            padding: 20px;
+        }
+
+        header .contenedor {
+            max-width: 1200px;
+            margin: auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 22px;
+        }
+
+        .boton {
+            display: inline-block;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 9px;
+            text-decoration: none;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 14px;
+            transition: 0.2s;
+            color: white;
+        }
+
+        .boton-volver {
+            background: #1e293b;
+            border: 1px solid #232942;
+            color: #e8ecf4;
+        }
+
+        .boton-volver:hover {
+            background: #232942;
+        }
+
+        .boton-cerrar {
+            background: #4b5563;
+        }
+
+        main {
+            max-width: 1200px;
+            margin: 30px auto;
+            padding: 20px;
+        }
+
+        /* ============================================
+           CABECERA DEL SORTEO
+        ============================================ */
+
+        .rifa-info {
+            background: #141827;
+            border: 1px solid #232942;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+
+        .rifa-titulo {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 0 0 8px;
+            color: #e8ecf4;
+        }
+
+        .rifa-descripcion {
+            color: #8a93ab;
+            margin: 0 0 15px;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+
+        .rifa-meta {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            font-size: 14px;
+            color: #8a93ab;
+        }
+
+        .rifa-meta strong {
+            color: #e8ecf4;
+        }
+
+        /* ============================================
+           ESTADÍSTICAS
+        ============================================ */
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: #141827;
+            border: 1px solid #232942;
+            border-radius: 12px;
+            padding: 18px;
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            margin: 0 0 8px;
+            font-size: 12px;
+            color: #8a93ab;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-card .numero {
+            font-size: 28px;
+            font-weight: bold;
+            color: #e8ecf4;
+        }
+
+        .stat-card .numero.azul { color: #60a5fa; }
+        .stat-card .numero.verde { color: #34d399; }
+        .stat-card .numero.violeta { color: #a78bfa; }
+        .stat-card .numero.gris { color: #9ca3af; }
+
+        /* ============================================
+           TABLA
+        ============================================ */
+
+        .tabla-contenedor {
+            background: #141827;
+            border: 1px solid #232942;
+            border-radius: 15px;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 800px;
+        }
+
+        th, td {
+            padding: 14px;
+            text-align: left;
+            border-bottom: 1px solid #232942;
+            vertical-align: middle;
+        }
+
+        th {
+            background: #0a0d18;
+            font-size: 12px;
+            color: #8a93ab;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: bold;
+        }
+
+        td {
+            font-size: 14px;
+            color: #e8ecf4;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover {
+            background: rgba(59, 130, 246, 0.04);
+        }
+
+        .boleto-numero {
+            font-weight: bold;
+            color: #60a5fa;
+            font-size: 16px;
+        }
+
+        .nombre {
+            font-weight: bold;
+            color: #e8ecf4;
+        }
+
+        .sin-nombre {
+            color: #4b5563;
+            font-style: italic;
+        }
+
+        .numero-especial {
+            display: inline-block;
+            background: rgba(139, 92, 246, 0.15);
+            color: #a78bfa;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .sin-especial {
+            color: #4b5563;
+            font-size: 13px;
+        }
+
+        .fecha {
+            white-space: nowrap;
+            color: #8a93ab;
+            font-size: 13px;
+        }
+
+        .estado {
+            display: inline-block;
+            padding: 5px 11px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .estado.reservado {
+            background: rgba(96, 165, 250, 0.15);
+            color: #60a5fa;
+        }
+
+        .estado.acreditado {
+            background: rgba(245, 158, 11, 0.15);
+            color: #fbbf24;
+        }
+
+        .estado.asignado {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+        }
+
+        .flash {
+            padding: 14px 18px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .flash.success {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .flash.error {
+            background: rgba(239, 68, 68, 0.15);
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .vacio {
+            text-align: center;
+            padding: 60px 20px;
+            color: #8a93ab;
+        }
+
+        .vacio-icono {
+            font-size: 60px;
+            margin-bottom: 15px;
+        }
+
+        .vacio h2 {
+            color: #e8ecf4;
+            margin: 0 0 10px;
+        }
+
+        .leyenda {
+            margin-top: 20px;
+            padding: 15px;
+            background: #141827;
+            border: 1px solid #232942;
+            border-radius: 12px;
+            font-size: 13px;
+            color: #8a93ab;
+            line-height: 1.6;
+        }
+
+        .leyenda strong {
+            color: #e8ecf4;
+        }
+
+        @media (max-width: 700px) {
+
+            main {
+                margin: 15px auto;
+                padding: 12px;
+            }
+
+            .rifa-titulo {
+                font-size: 20px;
+            }
+
+            th, td {
+                padding: 10px;
+                font-size: 13px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+
+<header>
+
+    <div class="contenedor">
+
+        <h1>👥 Participantes</h1>
+
+        
+
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+
+    <a href="{{ url_for('admin_tickets', rifa_id=rifa.id) }}"
+       class="boton"
+       style="background: linear-gradient(135deg, #10b981, #059669); color: white;">
+        🎫 Imprimir tickets
+    </a>
+
+    <a href="{{ url_for('admin_rifas') }}" class="boton boton-volver">
+        ← Volver al panel
+    </a>
+
+    <a href="{{ url_for('admin_logout') }}" class="boton boton-cerrar">
+        Cerrar Sesión
+    </a>
+
+</div>
+
+        </div>
+
+    </div>
+
+</header>
+
+
+<main>
+
+
+    <!-- ============================================
+         MENSAJES FLASH
+    ============================================ -->
+
+    {% with mensajes = get_flashed_messages(with_categories=true) %}
+
+        {% if mensajes %}
+
+            {% for categoria, mensaje in mensajes %}
+
+                <div class="flash {{ categoria }}">
+
+                    {{ mensaje }}
+
+                </div>
+
+            {% endfor %}
+
+        {% endif %}
+
+    {% endwith %}
+
+
+    <!-- ============================================
+         INFO DEL SORTEO
+    ============================================ -->
+
+    <div class="rifa-info">
+
+        <div class="rifa-titulo">
+
+            🎁 {{ rifa.titulo }}
+
+        </div>
+
+        {% if rifa.descripcion %}
+
+            <div class="rifa-descripcion">
+
+                {{ rifa.descripcion }}
+
+            </div>
+
+        {% endif %}
+
+        <div class="rifa-meta">
+
+            <div>
+
+                Estado:
+
+                <strong style="text-transform: uppercase;">
+
+                    {{ rifa.estado }}
+
+                </strong>
+
+            </div>
+
+            {% if rifa.fecha_sorteo %}
+
+                <div>
+
+                    Sorteo:
+
+                    <strong>
+
+                        {{ rifa.fecha_sorteo.strftime(
+                            '%d/%m/%Y %H:%M'
+                        ) }}
+
+                    </strong>
+
+                </div>
+
+            {% endif %}
+
+        </div>
+
+    </div>
+
+
+    <!-- ============================================
+         ESTADÍSTICAS
+    ============================================ -->
+
+    <div class="stats-grid">
+
+        <div class="stat-card">
+
+            <h3>Disponibles</h3>
+
+            <div class="numero gris">
+
+                {{ stats.disponibles }}
+
+            </div>
+
+        </div>
+
+        <div class="stat-card">
+
+            <h3>Reservados</h3>
+
+            <div class="numero azul">
+
+                {{ stats.reservados }}
+
+            </div>
+
+        </div>
+
+        <div class="stat-card">
+
+            <h3>Acreditados</h3>
+
+            <div class="numero violeta">
+
+                {{ stats.acreditados }}
+
+            </div>
+
+        </div>
+
+        <div class="stat-card">
+
+            <h3>Asignados</h3>
+
+            <div class="numero verde">
+
+                {{ stats.asignados }}
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- ============================================
+         LISTADO DE PARTICIPANTES
+    ============================================ -->
+
+    {% if participantes %}
+
+        <div class="tabla-contenedor">
+
+            <table>
+
+                <thead>
+
+                    <tr>
+
+                        <th>Boleto</th>
+
+                        <th>Nombre</th>
+
+                        <th>Número especial</th>
+
+                        <th>Estado</th>
+
+                        <th>Fecha de asignación</th>
+
+                    </tr>
+
+                </thead>
+
+                <tbody>
+
+                    {% for p in participantes %}
+
+                        <tr>
+
+                            <td>
+
+                                <span class="boleto-numero">
+
+                                    #{{ "%03d"|format(p.numero) }}
+
+                                </span>
+
+                            </td>
+
+                            <td>
+
+                                {% if p.nombre %}
+
+                                    <span class="nombre">
+
+                                        {{ p.nombre }}
+
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="sin-nombre">
+
+                                        Sin registrar
+
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+
+                                {% if p.numero_especial %}
+
+                                    <span class="numero-especial">
+
+                                        {{ p.numero_especial }}
+
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="sin-especial">
+
+                                        —
+
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                            <td>
+
+                                <span class="estado {{ p.estado }}">
+
+                                    {{ p.estado }}
+
+                                </span>
+
+                            </td>
+
+                            <td class="fecha">
+
+    {% if p.asignado_en %}
+
+        {{ (p.asignado_en | mx).strftime('%d/%m/%Y %H:%M') }}
+
+    {% elif p.reservado_en %}
+
+        Reservado:
+        {{ (p.reservado_en | mx).strftime('%d/%m/%Y %H:%M') }}
+
+    {% else %}
+
+        —
+
+    {% endif %}
+
+
+    {# Botón para liberar si no está asignado #}
+
+    {% if p.estado in ('reservado', 'acreditado') %}
+
+        <form
+            method="POST"
+            action="{{ url_for(
+                'admin_liberar_boleto',
+                boleto_id=p.id
+            ) }}"
+            onsubmit="return confirm('¿Liberar el boleto #{{ p.numero }}? El usuario perderá su progreso y el boleto volverá a estar disponible.');"
+            style="margin-top: 6px;"
+        >
+
+            <button
+                type="submit"
+                class="boton"
+                style="
+                    background: rgba(239, 68, 68, 0.15);
+                    color: #fca5a5;
+                    border: 1px solid rgba(239, 68, 68, 0.3);
+                    padding: 6px 10px;
+                    font-size: 12px;
+                "
+            >
+                🔓 Liberar
+            </button>
+
+        </form>
+
+    {% endif %}
+
+</td>
+
+                        </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+        <div class="leyenda">
+
+            <strong>ℹ️ Notas:</strong>
+
+            <br>
+
+            · Los boletos <strong>reservados</strong> son usuarios que aún no completan los 5 videos.
+
+            <br>
+
+            · Los boletos <strong>acreditados</strong> completaron los videos pero no han dado sus datos.
+
+            <br>
+
+            · Los boletos <strong>asignados</strong> ya tienen nombre y están listos para el sorteo.
+
+        </div>
+
+    {% else %}
+
+        <div class="tabla-contenedor">
+
+            <div class="vacio">
+
+                <div class="vacio-icono">
+
+                    👥
+
+                </div>
+
+                <h2>
+
+                    Aún no hay participantes
+
+                </h2>
+
+                <p>
+
+                    Cuando alguien reserve un boleto en
+                    este sorteo, aparecerá aquí.
+
+                </p>
+
+            </div>
+
+        </div>
+
+    {% endif %}
+
+
+</main>
+
+</body>
+
+</html>

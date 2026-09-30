@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión - Admin</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #0a0d18; color: #e8ecf4; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .login-card { background: #141827; border: 1px solid #232942; padding: 40px; border-radius: 16px; width: 100%; max-width: 400px; box-shadow: 0 8px 30px rgba(0,0,0,0.5); }
+        h1 { text-align: center; margin-bottom: 30px; color: #e8ecf4; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; color: #8a93ab; }
+        input { width: 100%; padding: 14px; background: #0a0d18; border: 1px solid #232942; border-radius: 10px; color: #e8ecf4; font-size: 16px; box-sizing: border-box; }
+        input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3); }
+        button { width: 100%; padding: 16px; background: linear-gradient(135deg, #3b82f6, #8b5cf6); border: none; border-radius: 10px; color: white; font-size: 18px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        button:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4); }
+        .flash { background: rgba(239, 68, 68, 0.15); color: #fca5a5; padding: 15px; border-radius: 10px; margin-bottom: 20px; text-align: center; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .flash.success { background: rgba(16, 185, 129, 0.15); color: #34d399; border-color: rgba(16, 185, 129, 0.3); }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <h1>🔐 Admin</h1>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash {{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        <form method="POST">
+            <div class="form-group">
+                <label for="username">Usuario</label>
+                <input type="text" id="username" name="username" required autocomplete="username">
+            </div>
+            <div class="form-group">
+                <label for="password">Contraseña</label>
+                <input type="password" id="password" name="password" required autocomplete="current-password">
+            </div>
+            <button type="submit">Iniciar Sesión</button>
+        </form>
+    </div>
+</body>
+</html>

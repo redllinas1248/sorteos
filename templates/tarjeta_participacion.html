@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Mi participación - {{ boleto.titulo }}</title>
+
+    <meta name="theme-color" content="#0a0d18">
+    <meta name="color-scheme" content="dark">
+
+    <link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Sorteos">
+
+    <style>
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #0a0d18;
+            color: #e8ecf4;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        header {
+            background: linear-gradient(135deg, #10b981, #047857);
+            color: white;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.3);
+        }
+
+        header h1 { margin: 0; font-size: 26px; }
+
+        .contenedor {
+            width: 100%;
+            max-width: 620px;
+            margin: 30px auto;
+            padding: 0 15px;
+        }
+
+        .tarjeta {
+            background: #141827;
+            border: 1px solid #232942;
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        .imagen {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .imagen-placeholder {
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(135deg, #1e1b4b, #0f1424);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 80px;
+            color: #8b5cf6;
+        }
+
+        .contenido { padding: 30px; }
+
+        .titulo-rifa {
+            text-align: center;
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #e8ecf4;
+        }
+
+        .descripcion {
+            text-align: center;
+            color: #8a93ab;
+            margin-bottom: 20px;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+
+        .boleto-grande {
+            text-align: center;
+            background: rgba(59, 130, 246, 0.08);
+            border: 3px dashed #3b82f6;
+            border-radius: 18px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .boleto-grande small {
+            display: block;
+            color: #8a93ab;
+            margin-bottom: 8px;
+            font-size: 13px;
+            letter-spacing: 2px;
+            font-weight: bold;
+        }
+
+        .boleto-grande .numero {
+            font-size: 56px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1;
+        }
+
+        .datos {
+            margin-top: 25px;
+            border-top: 1px solid #232942;
+            padding-top: 20px;
+        }
+
+        .dato {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #1a1f33;
+        }
+
+        .dato:last-child { border-bottom: none; }
+
+        .dato span {
+            color: #8a93ab;
+            font-size: 14px;
+        }
+
+        .dato strong {
+            color: #e8ecf4;
+            font-size: 15px;
+            text-align: right;
+            word-break: break-word;
+            max-width: 60%;
+        }
+
+        .codigo-reserva {
+            margin-top: 25px;
+            background: #0a0d18;
+            border: 1px solid #232942;
+            padding: 15px;
+            border-radius: 12px;
+            font-size: 13px;
+            text-align: center;
+            color: #8a93ab;
+            word-break: break-all;
+        }
+
+        .codigo-reserva code {
+            color: #a5b4fc;
+            font-weight: bold;
+        }
+
+        .nota {
+            margin-top: 15px;
+            text-align: center;
+            color: #8a93ab;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .acciones {
+            margin-top: 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .boton {
+            display: block;
+            padding: 14px;
+            border-radius: 12px;
+            text-align: center;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 15px;
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+            transition: 0.2s;
+        }
+
+        .boton-primario {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: white;
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+        }
+
+        .boton-primario:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 28px rgba(139, 92, 246, 0.6);
+        }
+
+        .boton-guardar {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        .boton-guardar:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 28px rgba(16, 185, 129, 0.6);
+        }
+
+        .boton-guardar:disabled {
+            background: #374151;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .boton-imprimir {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+        }
+
+        .boton-imprimir:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 28px rgba(245, 158, 11, 0.6);
+        }
+
+        .boton-secundario {
+            background: #1e293b;
+            color: #e8ecf4;
+            border: 1px solid #232942;
+        }
+
+        .boton-secundario:hover {
+            background: #232942;
+        }
+
+        .cargando {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.75);
+            backdrop-filter: blur(4px);
+            color: white;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: bold;
+            z-index: 9999;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .cargando.activo { display: flex; }
+
+        @media print {
+
+            body { background: white; color: black; }
+            header, .acciones, .cargando { display: none !important; }
+            .contenedor { margin: 0; padding: 0; max-width: 100%; }
+            .tarjeta { box-shadow: none; border-radius: 0; border: none; }
+            .imagen { max-height: 220px; }
+            .boleto-grande .numero {
+                -webkit-text-fill-color: #1877f2;
+                color: #1877f2;
+            }
+            .datos { color: black; }
+            .dato span { color: #666; }
+            .dato strong { color: black; }
+        }
+
+        @media (max-width: 500px) {
+            .contenido { padding: 20px; }
+            .boleto-grande .numero { font-size: 44px; }
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<header>
+    <h1>🎉 ¡Estás participando!</h1>
+</header>
+
+<a href="{{ url_for('consultar_participacion') }}" class="boton boton-secundario">
+    🔍 Consultar otra participación
+</a>
+
+<div class="contenedor">
+
+    <div class="tarjeta" id="tarjeta">
+
+        {% if boleto.imagen_url %}
+            <img class="imagen" src="{{ boleto.imagen_url }}" alt="{{ boleto.titulo }}" crossorigin="anonymous">
+        {% else %}
+            <div class="imagen-placeholder">🎁</div>
+        {% endif %}
+
+
+        <div class="contenido">
+
+            <div class="titulo-rifa">{{ boleto.titulo }}</div>
+
+            {% if boleto.descripcion %}
+                <div class="descripcion">{{ boleto.descripcion }}</div>
+            {% endif %}
+
+
+            <div class="boleto-grande">
+                <small>TU BOLETO</small>
+                <div class="numero">#{{ boleto.numero }}</div>
+            </div>
+
+
+            <div class="datos">
+
+                <div class="dato">
+                    <span>Nombre</span>
+                    <strong>{{ boleto.nombre or '—' }}</strong>
+                </div>
+
+                {% if boleto.numero_especial %}
+                    <div class="dato">
+                        <span>Número especial</span>
+                        <strong>{{ boleto.numero_especial }}</strong>
+                    </div>
+                {% endif %}
+
+                {% if boleto.fecha_sorteo %}
+                    <div class="dato">
+                        <span>Fecha del sorteo</span>
+                        <strong>{{ boleto.fecha_sorteo.strftime('%d/%m/%Y %H:%M') }}</strong>
+                    </div>
+                {% endif %}
+
+                <div class="dato">
+                    <span>Costo de participación</span>
+                    <strong style="color: #10b981;">Gratis ✅</strong>
+                </div>
+
+            </div>
+
+
+            <div class="codigo-reserva">
+                Código de participación:<br>
+                <code>{{ boleto.reserva_token }}</code>
+            </div>
+
+
+            <div class="nota">
+                📌 Guarda este código.<br>
+                Lo necesitarás para consultar tu participación más adelante.
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <div class="acciones">
+
+        <button type="button" id="btnGuardar" class="boton boton-guardar" onclick="guardarComoImagen()">
+            📥 Guardar comprobante como imagen
+        </button>
+
+        <button type="button" class="boton boton-imprimir" onclick="window.print()">
+            🖨️ Imprimir / Guardar PDF
+        </button>
+
+        <a href="{{ url_for('rifas') }}" class="boton boton-primario">
+            🎁 Ver otros sorteos
+        </a>
+
+        <a href="{{ '/' }}" class="boton boton-secundario">
+            🏠 Ir al inicio
+        </a>
+
+    </div>
+
+</div>
+
+
+<div class="cargando" id="cargando">
+    ⏳ Generando imagen...
+    <br>
+    <small>Esto puede tomar un momento.</small>
+</div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+<script>
+
+    function guardarComoImagen() {
+
+        const tarjeta = document.getElementById("tarjeta");
+        const boton = document.getElementById("btnGuardar");
+        const overlay = document.getElementById("cargando");
+
+        boton.disabled = true;
+        boton.textContent = "⏳ Generando imagen...";
+        overlay.classList.add("activo");
+
+        html2canvas(tarjeta, {
+            backgroundColor: "#141827",
+            scale: 2,
+            useCORS: true,
+            allowTaint: false,
+            logging: false
+        })
+        .then(function(canvas) {
+
+            const dataURL = canvas.toDataURL("image/png");
+
+            const nombreArchivo =
+                "boleto-{{ boleto.numero }}-" +
+                "{{ boleto.titulo|replace(' ', '-')|lower }}.png";
+
+            const enlace = document.createElement("a");
+            enlace.href = dataURL;
+            enlace.download = nombreArchivo;
+            document.body.appendChild(enlace);
+            enlace.click();
+            document.body.removeChild(enlace);
+
+        })
+        .catch(function(error) {
+
+            console.error("Error al generar imagen:", error);
+            alert("No se pudo generar la imagen.\nPuedes usar el botón 'Imprimir / Guardar PDF'.");
+
+        })
+        .finally(function() {
+
+            boton.disabled = false;
+            boton.textContent = "📥 Guardar comprobante como imagen";
+            overlay.classList.remove("activo");
+
+        });
+
+    }
+
+</script>
+
+</body>
+</html>

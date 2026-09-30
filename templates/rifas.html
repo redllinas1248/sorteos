@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Sorteos Gratuitos | appazueta.lat</title>
+
+    <meta name="description" content="Participa gratis en nuestros sorteos. Sin pagos, sin tarjetas. Mira videos cortos y gana tu boleto para premios increíbles.">
+
+        <meta name="theme-color" content="#0a0d18">
+    <meta name="color-scheme" content="dark">
+
+    <!-- PWA -->
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Sorteos">
+
+    <style>
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #0a0d18;
+            color: #e8ecf4;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* ============================================
+           NAVBAR
+        ============================================ */
+
+        .topbar {
+            background: #141827;
+            border-bottom: 1px solid #232942;
+            padding: 15px 20px;
+        }
+
+        .topbar-inner {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .topbar-brand {
+            color: #e8ecf4;
+            text-decoration: none;
+            font-size: 18px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .topbar-links {
+            display: flex;
+            gap: 18px;
+            flex-wrap: wrap;
+        }
+
+        .topbar-links a {
+            color: #a5b4fc;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: 0.2s;
+        }
+
+        .topbar-links a:hover {
+            color: #8b5cf6;
+        }
+
+        /* ============================================
+           HERO
+        ============================================ */
+
+        .hero {
+            background:
+                radial-gradient(circle at top, rgba(139, 92, 246, 0.15), transparent 60%),
+                radial-gradient(circle at bottom right, rgba(59, 130, 246, 0.12), transparent 50%),
+                linear-gradient(135deg, #0a0d18, #0f1424);
+            padding: 70px 20px 60px;
+            text-align: center;
+            border-bottom: 1px solid #232942;
+        }
+
+        .hero-badge {
+            display: inline-block;
+            background: rgba(16, 185, 129, 0.12);
+            color: #34d399;
+            padding: 8px 18px;
+            border-radius: 50px;
+            font-size: 13px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+
+        .hero h1 {
+            margin: 0;
+            font-size: 42px;
+            font-weight: bold;
+            letter-spacing: -1px;
+            line-height: 1.1;
+            background: linear-gradient(135deg, #ffffff 0%, #a5b4fc 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .hero-sub {
+            margin: 18px auto 30px;
+            max-width: 520px;
+            font-size: 18px;
+            color: #8a93ab;
+            line-height: 1.5;
+        }
+
+        /* ============================================
+           CÓMO FUNCIONA
+        ============================================ */
+
+        .como-funciona {
+            background: #0a0d18;
+            padding: 60px 20px;
+            border-bottom: 1px solid #232942;
+        }
+
+        .como-funciona-contenedor {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .como-funciona h2 {
+            text-align: center;
+            font-size: 30px;
+            margin: 0 0 15px;
+            color: #e8ecf4;
+        }
+
+        .como-funciona-sub {
+            text-align: center;
+            color: #8a93ab;
+            margin: 0 0 40px;
+            font-size: 16px;
+        }
+
+        .pasos {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 25px;
+        }
+
+        .paso {
+            text-align: center;
+            padding: 25px 20px;
+            background: #141827;
+            border: 1px solid #232942;
+            border-radius: 16px;
+            transition: 0.2s;
+        }
+
+        .paso:hover {
+            border-color: #3b82f6;
+            transform: translateY(-4px);
+            box-shadow: 0 12px 32px rgba(59, 130, 246, 0.15);
+        }
+
+        .paso-numero {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 55px;
+            height: 55px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: white;
+            border-radius: 50%;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 18px;
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+        }
+
+        .paso h3 {
+            margin: 0 0 10px;
+            font-size: 18px;
+            color: #e8ecf4;
+        }
+
+        .paso p {
+            color: #8a93ab;
+            line-height: 1.6;
+            margin: 0;
+            font-size: 14px;
+        }
+
+        /* ============================================
+           BANNER DE TRANSPARENCIA
+        ============================================ */
+
+        .transparencia {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(16, 185, 129, 0.03));
+            border-top: 1px solid rgba(16, 185, 129, 0.25);
+            border-bottom: 1px solid rgba(16, 185, 129, 0.25);
+            padding: 25px 20px;
+            text-align: center;
+        }
+
+        .transparencia strong {
+            font-size: 16px;
+            display: block;
+            margin-bottom: 5px;
+            color: #10b981;
+        }
+
+        .transparencia p {
+            margin: 0;
+            font-size: 14px;
+            color: #8a93ab;
+        }
+
+        /* ============================================
+           LISTADO DE SORTEOS
+        ============================================ */
+
+        header {
+            background: linear-gradient(135deg, #1e1b4b, #0a0d18);
+            border-bottom: 1px solid #232942;
+            color: white;
+            padding: 25px 20px;
+            text-align: center;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 26px;
+            background: linear-gradient(135deg, #ffffff, #a5b4fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .contenedor {
+            width: 100%;
+            max-width: 1100px;
+            margin: 30px auto;
+            padding: 0 15px;
+        }
+
+        .titulo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .titulo h2 { margin-bottom: 8px; color: #e8ecf4; }
+
+        .titulo p { color: #8a93ab; }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+        }
+
+        .rifa {
+            background: #141827;
+            border: 1px solid #232942;
+            border-radius: 16px;
+            overflow: hidden;
+            transition: 0.2s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .rifa:hover {
+            transform: translateY(-4px);
+            border-color: #3b82f6;
+            box-shadow: 0 16px 40px rgba(59, 130, 246, 0.2);
+        }
+
+        .rifa img {
+            width: 100%;
+            height: 220px;
+            object-fit: contain;
+            display: block;
+            background: #0a0d18;
+            padding: 10px;
+        }
+
+        .rifa-placeholder {
+            width: 100%;
+            height: 220px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #1e293b, #0f1424);
+            font-size: 60px;
+            color: #8b5cf6;
+        }
+
+        .rifa-contenido {
+            padding: 22px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .rifa h3 {
+            margin-top: 0;
+            font-size: 22px;
+            color: #e8ecf4;
+        }
+
+        .descripcion {
+            color: #8a93ab;
+            line-height: 1.5;
+            flex: 1;
+        }
+
+        .datos {
+            margin: 18px 0;
+            padding: 15px;
+            background: #0a0d18;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-around;
+            border: 1px solid #232942;
+        }
+
+        .dato {
+            text-align: center;
+            flex: 1;
+        }
+
+        .dato strong {
+            display: block;
+            color: #e8ecf4;
+            font-size: 17px;
+            margin-bottom: 3px;
+        }
+
+        .dato strong.verde { color: #10b981; }
+
+        .dato span {
+            color: #8a93ab;
+            font-size: 12px;
+        }
+
+        .boton {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: white;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 10px;
+            font-size: 17px;
+            font-weight: bold;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(139, 92, 246, 0.3);
+            transition: 0.2s;
+        }
+
+        .boton:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 24px rgba(139, 92, 246, 0.5);
+        }
+
+        .sin-rifas {
+            background: #141827;
+            border: 1px solid #232942;
+            padding: 40px;
+            border-radius: 16px;
+            text-align: center;
+        }
+
+        .sin-rifas h2 { color: #e8ecf4; }
+
+        .flash {
+            max-width: 700px;
+            margin: 20px auto;
+            padding: 15px;
+            border-radius: 10px;
+            background: rgba(239, 68, 68, 0.15);
+            color: #fca5a5;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        footer {
+            background: #050810;
+            border-top: 1px solid #232942;
+            color: #8a93ab;
+            padding: 40px 20px 30px;
+            text-align: center;
+            font-size: 14px;
+            margin-top: 60px;
+        }
+
+        .footer-links {
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 8px 20px;
+        }
+
+        .footer-links a {
+            color: #a5b4fc;
+            text-decoration: none;
+            transition: 0.2s;
+        }
+
+        .footer-links a:hover { color: #8b5cf6; }
+
+        @media (max-width: 600px) {
+
+            .hero { padding: 50px 20px 40px; }
+            .hero h1 { font-size: 30px; }
+            .hero-sub { font-size: 16px; }
+            .como-funciona h2 { font-size: 24px; }
+            .topbar-links { gap: 12px; }
+            .topbar-links a { font-size: 13px; }
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+
+<!-- ============================================
+     NAVBAR
+============================================= -->
+
+<nav class="topbar">
+
+    <div class="topbar-inner">
+
+        <a href="/" class="topbar-brand">
+            📰 Noticias del Día Azver
+        </a>
+
+        <div class="topbar-links">
+            <a href="/">Inicio</a>
+            <a href="/rifas">Sorteos</a>
+            <a href="/comercio">Comercio</a>
+        </div>
+
+    </div>
+
+</nav>
+
+
+<!-- ============================================
+     HERO
+============================================= -->
+
+<section class="hero">
+
+    <div class="hero-badge">✨ 100% GRATUITO · SIN PAGOS</div>
+
+    <h1>Sorteos Gratuitos</h1>
+
+    <p class="hero-sub">
+        Participa sin pagar nada. Mira videos cortos,
+        obtén tu boleto y participa por premios increíbles.
+    </p>
+
+</section>
+
+
+<!-- ============================================
+     CÓMO FUNCIONA
+============================================= -->
+
+<section class="como-funciona">
+
+    <div class="como-funciona-contenedor">
+
+        <h2>¿Cómo funciona?</h2>
+
+        <p class="como-funciona-sub">
+            Participar es muy fácil. Solo 3 pasos.
+        </p>
+
+        <div class="pasos">
+
+            <div class="paso">
+                <div class="paso-numero">1</div>
+                <h3>🎟️ Reserva tu boleto</h3>
+                <p>Elige un número disponible en el sorteo que más te guste.</p>
+            </div>
+
+            <div class="paso">
+                <div class="paso-numero">2</div>
+                <h3>▶️ Mira 5 videos</h3>
+                <p>Completa 5 videos cortos para acreditar tu boleto. Sin pagar nada.</p>
+            </div>
+
+            <div class="paso">
+                <div class="paso-numero">3</div>
+                <h3>🎉 ¡Listo!</h3>
+                <p>Guarda tu comprobante y espera la fecha del sorteo.</p>
+            </div>
+
+        </div>
+
+    </div>
+
+</section>
+
+
+<!-- ============================================
+     BANNER DE TRANSPARENCIA
+============================================= -->
+
+<div class="transparencia">
+
+    <strong>🔒 Sin pagos, sin tarjetas, sin suscripciones</strong>
+
+    <p>Nuestros sorteos son 100% gratuitos. Nunca te pediremos dinero para participar.</p>
+
+</div>
+
+
+<!-- ============================================
+     LISTADO DE SORTEOS
+============================================= -->
+
+<header>
+    <h1>🎁 Sorteos Gratuitos</h1>
+</header>
+
+
+<div class="contenedor">
+
+    <div class="titulo">
+        <h2>Participa en nuestros sorteos</h2>
+        <p>Elige un sorteo, mira videos y gana tu boleto.</p>
+    </div>
+
+
+    {% with mensajes = get_flashed_messages() %}
+        {% if mensajes %}
+            {% for mensaje in mensajes %}
+                <div class="flash">{{ mensaje }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+
+    {% if rifas %}
+
+        <div class="grid">
+
+            {% for rifa in rifas %}
+
+                <div class="rifa">
+
+                    {% if rifa.imagen_url %}
+                        <img src="{{ rifa.imagen_url }}" alt="{{ rifa.titulo }}">
+                    {% else %}
+                        <div class="rifa-placeholder">🎁</div>
+                    {% endif %}
+
+                    <div class="rifa-contenido">
+
+                        <h3>{{ rifa.titulo }}</h3>
+
+                        {% if rifa.descripcion %}
+                            <div class="descripcion">{{ rifa.descripcion }}</div>
+                        {% endif %}
+
+                        <div class="datos">
+                            <div class="dato">
+                                <strong>{{ rifa.cantidad_boletos }}</strong>
+                                <span>Boletos</span>
+                            </div>
+                            <div class="dato">
+                                <strong class="verde">Gratis</strong>
+                                <span>Participación</span>
+                            </div>
+                        </div>
+
+                        <a class="boton" href="/rifas/participar/{{ rifa.id }}">
+                            🎟️ Participar gratis
+                        </a>
+
+                    </div>
+
+                </div>
+
+            {% endfor %}
+
+        </div>
+
+    {% else %}
+
+        <div class="sin-rifas">
+            <h2>🎁 Próximamente nuevos sorteos</h2>
+            <p style="color:#8a93ab;">En este momento no hay sorteos activos. Vuelve pronto.</p>
+        </div>
+
+    {% endif %}
+
+</div>
+
+
+<!-- ============================================
+     FOOTER
+============================================= -->
+
+<footer>
+
+    <div class="footer-links">
+        <a href="/">Inicio</a>
+        <a href="/noticias">Noticias</a>
+        <a href="/rifas">Sorteos</a>
+        <a href="/comercio">Comercio</a>
+        <a href="/faq">FAQ</a>
+        <a href="/ganadores">Ganadores</a>
+        <a href="/privacidad">Privacidad</a>
+        <a href="/terminos">Términos</a>
+        <a href="/contacto">Contacto</a>
+    </div>
+
+    <div style="opacity:0.6; font-size:13px;">
+        © 2026 appazueta.lat · Todos los derechos reservados
+    </div>
+
+</footer>
+
+
+<!-- ============================================
+     BANNER DE INSTALACIÓN PWA
+============================================= -->
+
+<div class="install-banner" id="installBanner">
+
+    <div class="install-icono">🎁</div>
+
+    <div class="install-texto">
+        <strong>Instala nuestra app</strong>
+        <span>Acceso rápido y sin navegador</span>
+    </div>
+
+    <button class="install-btn" id="btnInstalar">Instalar</button>
+
+    <button class="install-cerrar" id="btnCerrarBanner">&times;</button>
+
+</div>
+
+
+<style>
+
+    .install-banner {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: calc(100% - 30px);
+        max-width: 420px;
+        background: linear-gradient(135deg, #1e1b4b, #141827);
+        border: 1px solid #3b82f6;
+        border-radius: 16px;
+        padding: 15px;
+        box-shadow: 0 12px 40px rgba(59, 130, 246, 0.4);
+        display: none;
+        align-items: center;
+        gap: 12px;
+        z-index: 9998;
+        animation: slideUp 0.4s ease;
+    }
+
+    .install-banner.activo {
+        display: flex;
+    }
+
+    @keyframes slideUp {
+        from { transform: translate(-50%, 100%); opacity: 0; }
+        to { transform: translate(-50%, 0); opacity: 1; }
+    }
+
+    .install-icono {
+        font-size: 32px;
+        flex-shrink: 0;
+    }
+
+    .install-texto {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        min-width: 0;
+    }
+
+    .install-texto strong {
+        color: #e8ecf4;
+        font-size: 14px;
+    }
+
+    .install-texto span {
+        color: #8a93ab;
+        font-size: 12px;
+    }
+
+    .install-btn {
+        background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+        color: white;
+        border: none;
+        padding: 10px 18px;
+        border-radius: 10px;
+        font-weight: bold;
+        font-size: 13px;
+        cursor: pointer;
+        flex-shrink: 0;
+        transition: 0.2s;
+    }
+
+    .install-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(139, 92, 246, 0.5);
+    }
+
+    .install-cerrar {
+        background: transparent;
+        border: none;
+        color: #8a93ab;
+        font-size: 22px;
+        cursor: pointer;
+        padding: 0 5px;
+        line-height: 1;
+        flex-shrink: 0;
+    }
+
+    .install-cerrar:hover {
+        color: #e8ecf4;
+    }
+
+</style>
+
+
+<script>
+
+    // ============================================================
+    // SERVICE WORKER
+    // ============================================================
+
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+            navigator.serviceWorker
+                .register('/service-worker.js')
+                .then(function(reg) {
+                    console.log('✅ SW registrado:', reg.scope);
+                })
+                .catch(function(err) {
+                    console.log('❌ Error SW:', err);
+                });
+        });
+    }
+
+    // ============================================================
+    // BANNER DE INSTALACIÓN PWA
+    // ============================================================
+
+    let deferredPrompt = null;
+
+    const banner = document.getElementById('installBanner');
+    const btnInstalar = document.getElementById('btnInstalar');
+    const btnCerrarBanner = document.getElementById('btnCerrarBanner');
+
+    window.addEventListener('beforeinstallprompt', function(e) {
+
+        e.preventDefault();
+        deferredPrompt = e;
+
+        // Reaparece después de 7 días si el usuario lo cerró
+        const cerradoHasta = parseInt(localStorage.getItem('pwa-banner-cerrado') || '0');
+        if (cerradoHasta && Date.now() < cerradoHasta) {
+            return;
+        }
+
+        // Mostrar banner después de 3 segundos
+        setTimeout(function() {
+            banner.classList.add('activo');
+        }, 3000);
+
+    });
+
+    if (btnInstalar) {
+        btnInstalar.addEventListener('click', function() {
+
+            if (!deferredPrompt) return;
+
+            deferredPrompt.prompt();
+
+            deferredPrompt.userChoice.then(function(choice) {
+                console.log('Elección:', choice.outcome);
+                deferredPrompt = null;
+                banner.classList.remove('activo');
+            });
+
+        });
+    }
+
+    if (btnCerrarBanner) {
+        btnCerrarBanner.addEventListener('click', function() {
+            banner.classList.remove('activo');
+            // No molestar por 7 días
+            const sieteDias = 7 * 24 * 60 * 60 * 1000;
+            localStorage.setItem('pwa-banner-cerrado', String(Date.now() + sieteDias));
+        });
+    }
+
+    // Detectar cuando ya está instalada
+    window.addEventListener('appinstalled', function() {
+        console.log('✅ App instalada');
+        banner.classList.remove('activo');
+    });
+
+</script>
+
+
+</body>
+</html>

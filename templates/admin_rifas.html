@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Administracion</title>
+    <style>
+        /* ... (tu CSS existente del admin, adaptado a dark mode) ... */
+        body { margin: 0; font-family: Arial, sans-serif; background: #0a0d18; color: #e8ecf4; }
+        header { background: #141827; border-bottom: 1px solid #232942; padding: 20px; }
+        header .contenedor { max-width: 1200px; margin: auto; display: flex; justify-content: space-between; align-items: center; }
+        main { max-width: 1200px; margin: 30px auto; padding: 20px; }
+        .encabezado { display: flex; justify-content: space-between; align-items: center; gap: 20px; margin-bottom: 25px; }
+        .encabezado h2 { margin: 0; }
+        .boton { display: inline-block; padding: 11px 16px; border: none; border-radius: 9px; text-decoration: none; font-weight: bold; cursor: pointer; font-size: 14px; transition: 0.2s; }
+        .boton-nuevo { background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: white; }
+        .boton-editar { background: #1e293b; color: #e8ecf4; border: 1px solid #232942; }
+        .boton-publicar { background: #10b981; color: white; }
+        .boton-finalizar { background: #374151; color: white; }
+        .boton-cancelar { background: #dc2626; color: white; }
+        .boton-pausar { background: #f59e0b; color: white; }
+        .boton-reanudar { background: #10b981; color: white; }
+        .boton-salir { background: #4b5563; color: white; }
+        .acciones { display: flex; flex-wrap: wrap; gap: 7px; }
+        .acciones form { margin: 0; }
+        .tabla-contenedor { background: #141827; border: 1px solid #232942; border-radius: 15px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 900px; }
+        th, td { padding: 14px; text-align: left; border-bottom: 1px solid #232942; vertical-align: middle; }
+        th { background: #0a0d18; font-size: 14px; color: #8a93ab; text-transform: uppercase; letter-spacing: 0.5px; }
+        td { font-size: 14px; }
+        .titulo { font-weight: bold; color: #e8ecf4; }
+        .descripcion { color: #8a93ab; max-width: 280px; margin-top: 4px; }
+        .estado { display: inline-block; padding: 6px 11px; border-radius: 20px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
+        .estado.borrador { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+        .estado.activa { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+        .estado.pausada { background: rgba(139, 92, 246, 0.15); color: #a78bfa; }
+        .estado.finalizada { background: rgba(107, 114, 128, 0.2); color: #9ca3af; }
+        .estado.cancelada { background: rgba(239, 68, 68, 0.15); color: #fca5a5; }
+        .flash { padding: 14px 18px; border-radius: 10px; margin-bottom: 20px; font-weight: bold; }
+        .flash.success { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+        .flash.error { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .precio { font-weight: bold; color: #e8ecf4; }
+        .fecha { white-space: nowrap; color: #8a93ab; }
+        /* --- Nuevos estilos para estadísticas --- */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 40px; }
+        .stat-card { background: #141827; border: 1px solid #232942; border-radius: 12px; padding: 20px; text-align: center; }
+        .stat-card h3 { margin: 0 0 10px; font-size: 14px; color: #8a93ab; text-transform: uppercase; letter-spacing: 1px; }
+        .stat-card .numero { font-size: 32px; font-weight: bold; color: #e8ecf4; }
+        .stat-card .numero.verde { color: #34d399; }
+        .stat-card .numero.azul { color: #60a5fa; }
+        .stat-card .numero.amarillo { color: #fbbf24; }
+        .stat-card .numero.rojo { color: #f87171; }
+        .stats-rifa { display: flex; justify-content: space-around; margin-top: 10px; font-size: 13px; }
+        .stats-rifa span { color: #8a93ab; }
+        .stats-rifa strong { color: #e8ecf4; }
+        @media (max-width: 700px) { main { margin: 15px auto; padding: 12px; } .encabezado { flex-direction: column; align-items: stretch; } .boton-nuevo { text-align: center; } .stats-grid { grid-template-columns: 1fr 1fr; } }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="contenedor">
+        <h1>🎁 Administración de Sorteos</h1>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+    <a href="/rifas/admin/noticias" class="boton" style="background:#8b5cf6; color:white;">📰 Noticias</a>
+    <a href="{{ url_for('admin_logout') }}" class="boton boton-salir">Cerrar Sesión</a>
+</div>
+    </div>
+</header>
+
+<main>
+
+    <!-- Mensajes Flash -->
+    {% with mensajes = get_flashed_messages(with_categories=true) %}
+        {% if mensajes %}
+            {% for categoria, mensaje in mensajes %}
+                <div class="flash {{ categoria }}">{{ mensaje }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- ==========================================
+         PANEL DE ESTADÍSTICAS
+         ========================================== -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>Sorteos Activos</h3>
+            <div class="numero verde">{{ stats_rifas.get('activa', 0) }}</div>
+        </div>
+        <div class="stat-card">
+            <h3>Sorteos Pausados</h3>
+            <div class="numero amarillo">{{ stats_rifas.get('pausada', 0) }}</div>
+        </div>
+        <div class="stat-card">
+            <h3>Boletos Reservados</h3>
+            <div class="numero azul">{{ stats_boletos.get('reservado', 0) }}</div>
+        </div>
+        <div class="stat-card">
+            <h3>Boletos Acreditados</h3>
+            <div class="numero verde">{{ stats_boletos.get('acreditado', 0) + stats_boletos.get('asignado', 0) }}</div>
+        </div>
+        <div class="stat-card">
+            <h3>Boletos Disponibles</h3>
+            <div class="numero">{{ stats_boletos.get('disponible', 0) }}</div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         ENCABEZADO Y LISTA DE RIFAS
+         ========================================== -->
+    <div class="encabezado">
+        <h2>Mis Sorteos</h2>
+        <a href="{{ url_for('nueva_rifa') }}" class="boton boton-nuevo">+ NUEVO SORTEO</a>
+    </div>
+
+    {% if rifas %}
+        <div class="tabla-contenedor">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Sorteo</th>
+                        <th>Progreso</th> <!-- Nueva columna -->
+                        <th>Estado</th>
+                        <th>Sorteo</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rifa in rifas %}
+                        <tr>
+                            <td>#{{ rifa.id }}</td>
+                            <td>
+                                <div class="titulo">{{ rifa.titulo }}</div>
+                                {% if rifa.descripcion %}<div class="descripcion">{{ rifa.descripcion }}</div>{% endif %}
+                            </td>
+                            <td>
+    {% set stats = stats_por_rifa.get(rifa.id) %}
+    {% if stats %}
+        <div class="stats-rifa" style="display:flex; gap:12px; font-size:13px;">
+            <span title="Disponibles">🟢 <strong style="color:#e8ecf4;">{{ stats.disponibles }}</strong></span>
+            <span title="Reservados">🔵 <strong style="color:#60a5fa;">{{ stats.reservados }}</strong></span>
+            <span title="Acreditados/Asignados">🟡 <strong style="color:#34d399;">{{ stats.acreditados + stats.asignados }}</strong></span>
+        </div>
+    {% else %}
+        <span style="color:#4b5563;">—</span>
+    {% endif %}
+</td>
+                            <td><span class="estado {{ rifa.estado }}">{{ rifa.estado }}</span></td>
+                            <td class="fecha">
+                                {% if rifa.fecha_sorteo %}{{ rifa.fecha_sorteo.strftime('%d/%m/%Y %H:%M') }}{% else %}Sin definir{% endif %}
+                            </td>
+                            <td>
+                                <div class="acciones">
+
+<a
+    href="{{ url_for('admin_participantes', rifa_id=rifa.id) }}"
+    class="boton"
+    style="background:#8b5cf6; color:white;"
+>
+    👥 Ver participantes
+</a>
+<a
+    href="{{ url_for('admin_tickets', rifa_id=rifa.id) }}"
+    class="boton"
+    style="background:#10b981; color:white;"
+>
+    🎫 Tickets
+</a>
+
+                                    <a href="{{ url_for('editar_rifa', rifa_id=rifa.id) }}" class="boton boton-editar">✏️ Editar</a>
+
+                                    {% if rifa.estado == 'borrador' %}
+                                        <form method="POST" action="{{ url_for('publicar_rifa', rifa_id=rifa.id) }}" onsubmit="return confirm('¿Publicar este sorteo? Será visible para el público.');">
+                                            <button type="submit" class="boton boton-publicar">🟢 Publicar</button>
+                                        </form>
+                                    {% elif rifa.estado == 'activa' %}
+                                        <form method="POST" action="{{ url_for('pausar_rifa', rifa_id=rifa.id) }}" onsubmit="return confirm('¿Pausar este sorteo? No se aceptarán nuevos participantes temporalmente.');">
+                                            <button type="submit" class="boton boton-pausar">⏸️ Pausar</button>
+                                        </form>
+                                        <form method="POST" action="{{ url_for('finalizar_rifa', rifa_id=rifa.id) }}" onsubmit="return confirm('¿Finalizar este sorteo?');">
+                                            <button type="submit" class="boton boton-finalizar">🏁 Finalizar</button>
+                                        </form>
+                                    {% elif rifa.estado == 'pausada' %}
+                                        <form method="POST" action="{{ url_for('reanudar_rifa', rifa_id=rifa.id) }}" onsubmit="return confirm('¿Reanudar este sorteo? Volverá a estar disponible para el público.');">
+                                            <button type="submit" class="boton boton-reanudar">▶️ Reanudar</button>
+                                        </form>
+                                        <form method="POST" action="{{ url_for('finalizar_rifa', rifa_id=rifa.id) }}" onsubmit="return confirm('¿Finalizar este sorteo?');">
+                                            <button type="submit" class="boton boton-finalizar">🏁 Finalizar</button>
+                                        </form>
+                                    {% endif %}
+
+                                    {% if rifa.estado in ['borrador', 'activa', 'pausada'] %}
+                                        <form method="POST" action="{{ url_for('cancelar_rifa', rifa_id=rifa.id) }}" onsubmit="return confirm('¿Seguro que deseas cancelar este sorteo?');">
+                                            <button type="submit" class="boton boton-cancelar">🔴 Cancelar</button>
+                                        </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div class="vacio"><h2>🎁 No hay sorteos todavía</h2><p>Crea tu primer sorteo para comenzar.</p></div>
+    {% endif %}
+
+</main>
+
+</body>
+</html>

@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Tickets - {{ rifa.titulo }}</title>
+
+    <style>
+
+        /* ============================================
+           ESTILOS DE PANTALLA (SOLO VISIBLES EN BROWSER)
+        ============================================ */
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .toolbar {
+            position: sticky;
+            top: 0;
+            background: #111827;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+            z-index: 100;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .toolbar-info h1 {
+            margin: 0 0 5px;
+            font-size: 18px;
+        }
+
+        .toolbar-info p {
+            margin: 0;
+            font-size: 13px;
+            opacity: 0.75;
+        }
+
+        .toolbar-acciones {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .boton {
+            border: none;
+            padding: 11px 18px;
+            border-radius: 9px;
+            font-weight: bold;
+            font-size: 14px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: 0.2s;
+            display: inline-block;
+        }
+
+        .boton-imprimir {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: white;
+            box-shadow: 0 4px 16px rgba(139, 92, 246, 0.35);
+        }
+
+        .boton-imprimir:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 24px rgba(139, 92, 246, 0.5);
+        }
+
+        .boton-volver {
+            background: #374151;
+            color: white;
+        }
+
+        .boton-volver:hover {
+            background: #4b5563;
+        }
+
+        .aviso {
+            max-width: 800px;
+            margin: 20px auto 0;
+            padding: 15px 20px;
+            background: #fef3c7;
+            border: 1px solid #fbbf24;
+            color: #78350f;
+            border-radius: 12px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .aviso strong {
+            color: #92400e;
+        }
+
+        .sin-boletos {
+            max-width: 600px;
+            margin: 60px auto;
+            padding: 50px 30px;
+            background: white;
+            border-radius: 16px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        }
+
+        .sin-boletos .icono {
+            font-size: 60px;
+            margin-bottom: 20px;
+        }
+
+        .sin-boletos h2 {
+            margin: 0 0 10px;
+            color: #111827;
+        }
+
+        .sin-boletos p {
+            color: #6b7280;
+            margin: 0 0 25px;
+            line-height: 1.5;
+        }
+
+        /* ============================================
+           HOJAS DE TICKETS (SE VEN EN PANTALLA Y PRINT)
+        ============================================ */
+
+        .hoja {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 20px auto;
+            background: white;
+            padding: 10mm;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(5, 1fr);
+            gap: 4mm;
+        }
+
+        .ticket {
+            border: 1.5px dashed #999;
+            padding: 3mm;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            text-align: center;
+            page-break-inside: avoid;
+            border-radius: 4mm;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ticket-titulo {
+            font-size: 8px;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #6b7280;
+            letter-spacing: 0.5px;
+            line-height: 1.2;
+            margin-bottom: 2mm;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+        }
+
+        .ticket-numero {
+            font-size: 42px;
+            font-weight: bold;
+            color: #111827;
+            line-height: 1;
+            letter-spacing: -1px;
+            font-family: 'Courier New', monospace;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ticket-footer {
+            font-size: 7px;
+            color: #9ca3af;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 2mm;
+        }
+
+        /* ============================================
+           ESTILOS DE IMPRESIÓN
+        ============================================ */
+
+        @media print {
+
+            @page {
+                size: A4 portrait;
+                margin: 0;
+            }
+
+            body {
+                background: white;
+                margin: 0;
+                padding: 0;
+            }
+
+            .toolbar,
+            .aviso,
+            .sin-boletos {
+                display: none !important;
+            }
+
+            .hoja {
+                width: 210mm;
+                height: 297mm;
+                margin: 0;
+                padding: 8mm;
+                box-shadow: none;
+                page-break-after: always;
+                grid-template-columns: repeat(3, 1fr);
+                grid-template-rows: repeat(5, 1fr);
+                gap: 3mm;
+            }
+
+            .hoja:last-child {
+                page-break-after: auto;
+            }
+
+            .ticket {
+                border: 1.5px dashed #000;
+            }
+
+            .ticket-numero {
+                color: #000;
+            }
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+
+<!-- ============================================
+     BARRA DE HERRAMIENTAS (NO SE IMPRIME)
+============================================= -->
+
+<div class="toolbar">
+
+    <div class="toolbar-info">
+
+        <h1>🎫 Tickets imprimibles</h1>
+
+        <p>
+            {{ rifa.titulo }} ·
+            {{ boletos|length }} participaciones
+        </p>
+
+    </div>
+
+    <div class="toolbar-acciones">
+
+        <button onclick="window.print()" class="boton boton-imprimir">
+            🖨️ Imprimir / Guardar PDF
+        </button>
+
+        <a href="{{ url_for('admin_participantes', rifa_id=rifa.id) }}"
+           class="boton boton-volver">
+            ← Volver
+        </a>
+
+    </div>
+
+</div>
+
+
+{% if boletos %}
+
+
+    <!-- ============================================
+         AVISO PARA EL ADMIN
+    ============================================ -->
+
+    <div class="aviso">
+
+        <strong>📋 Instrucciones:</strong>
+
+        <br>
+
+        1. Toca <strong>"Imprimir / Guardar PDF"</strong> arriba.
+        <br>
+
+        2. En el diálogo, elige <strong>"Guardar como PDF"</strong> o tu impresora.
+        <br>
+
+        3. Imprime las hojas (recomendado: <strong>papel grueso o cartulina</strong>).
+        <br>
+
+        4. Recorta cada ticket por la <strong>línea punteada</strong>.
+        <br>
+
+        5. Dóblalos, mézclalos y realiza el sorteo en vivo. 🎉
+
+    </div>
+
+
+    <!-- ============================================
+         GENERAR HOJAS CON TICKETS
+    ============================================ -->
+
+    {% set por_hoja = 15 %}
+
+    {% set total = boletos|length %}
+
+    {% set num_hojas = (total + por_hoja - 1) // por_hoja %}
+
+
+    {% for hoja_num in range(num_hojas) %}
+
+        <div class="hoja">
+
+            {% set inicio = hoja_num * por_hoja %}
+
+            {% set fin = inicio + por_hoja %}
+
+            {% for boleto in boletos[inicio:fin] %}
+
+                <div class="ticket">
+
+                    <div class="ticket-titulo">
+                        {{ rifa.titulo }}
+                    </div>
+
+                    <div class="ticket-numero">
+                        {{ "%03d"|format(boleto.numero) }}
+                    </div>
+
+                    <div class="ticket-footer">
+                        Boleto oficial
+                    </div>
+
+                </div>
+
+            {% endfor %}
+
+
+            {# Rellenar celdas vacías si es la última hoja #}
+
+            {% set faltantes = por_hoja - (boletos[inicio:fin]|length) %}
+
+            {% for _ in range(faltantes) %}
+
+                <div class="ticket" style="border-color: transparent;"></div>
+
+            {% endfor %}
+
+        </div>
+
+    {% endfor %}
+
+
+{% else %}
+
+
+    <!-- ============================================
+         SIN PARTICIPANTES
+    ============================================ -->
+
+    <div class="sin-boletos">
+
+        <div class="icono">🎫</div>
+
+        <h2>Sin participaciones aún</h2>
+
+        <p>
+            Este sorteo todavía no tiene boletos asignados
+            (con participantes registrados). Cuando alguien
+            complete el proceso, podrás generar los tickets
+            para el sorteo físico.
+        </p>
+
+        <a href="{{ url_for('admin_participantes', rifa_id=rifa.id) }}"
+           class="boton boton-volver"
+           style="display:inline-block;">
+            ← Volver al listado
+        </a>
+
+    </div>
+
+
+{% endif %}
+
+
+</body>
+
+</html>

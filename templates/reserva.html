@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Tu boleto - {{ boleto.titulo }}</title>
+
+    <meta name="theme-color" content="#0a0d18">
+    <meta name="color-scheme" content="dark">
+
+    <link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Sorteos">
+
+    <style>
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #0a0d18;
+            color: #e8ecf4;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        header {
+            background: linear-gradient(135deg, #1e1b4b, #0a0d18);
+            border-bottom: 1px solid #232942;
+            color: white;
+            padding: 22px;
+            text-align: center;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 25px;
+            background: linear-gradient(135deg, #ffffff, #a5b4fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .contenedor {
+            width: 100%;
+            max-width: 650px;
+            margin: 30px auto;
+            padding: 0 15px;
+        }
+
+        .tarjeta {
+            background: #141827;
+            border: 1px solid #232942;
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .imagen {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+
+        .titulo {
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #e8ecf4;
+        }
+
+        .boleto {
+            text-align: center;
+            background: rgba(59, 130, 246, 0.08);
+            border: 2px dashed #3b82f6;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .boleto small {
+            display: block;
+            color: #8a93ab;
+            margin-bottom: 8px;
+        }
+
+        .numero {
+            font-size: 48px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1;
+        }
+
+        .progreso { margin-top: 25px; }
+
+        .progreso-titulo {
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #e8ecf4;
+        }
+
+        .barra {
+            width: 100%;
+            height: 22px;
+            background: #0a0d18;
+            border: 1px solid #232942;
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        .barra-interna {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            width: {{ (progreso.videos_completados / progreso.total_videos * 100)|round(0) }}%;
+            transition: width .3s ease;
+            box-shadow: 0 0 20px rgba(139, 92, 246, 0.5);
+        }
+
+        .contador {
+            text-align: center;
+            font-size: 18px;
+            margin: 12px 0 20px;
+            font-weight: bold;
+            color: #e8ecf4;
+        }
+
+        .boton {
+            width: 100%;
+            border: none;
+            border-radius: 12px;
+            padding: 16px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+            transition: 0.2s;
+        }
+
+        .boton:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 28px rgba(139, 92, 246, 0.6);
+        }
+
+        .boton:disabled {
+            background: #374151;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .boton-continuar {
+            display: block;
+            width: 100%;
+            text-align: center;
+            text-decoration: none;
+            border-radius: 12px;
+            padding: 16px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 20px;
+            box-sizing: border-box;
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+            transition: 0.2s;
+        }
+
+        .boton-continuar:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 28px rgba(16, 185, 129, 0.6);
+        }
+
+        .completado {
+            text-align: center;
+            padding: 20px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            border-radius: 15px;
+            color: #34d399;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .advertencia {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(245, 158, 11, 0.08);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            border-radius: 12px;
+            color: #fbbf24;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .advertencia strong { color: #f59e0b; }
+
+        .volver {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #a5b4fc;
+            text-decoration: none;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        .volver:hover { color: #8b5cf6; }
+
+        .flash {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        /* ============================================
+           OVERLAY DE CARGA DEL ANUNCIO
+        ============================================ */
+
+        .overlay-ad {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(6px);
+            color: white;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            z-index: 9999;
+            text-align: center;
+            padding: 30px;
+        }
+
+        .overlay-ad.activo { display: flex; }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 5px solid rgba(139, 92, 246, 0.2);
+            border-top-color: #8b5cf6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .overlay-ad h3 {
+            margin: 0 0 8px;
+            font-size: 20px;
+        }
+
+        .overlay-ad p {
+            color: #a5b4fc;
+            font-size: 14px;
+            margin: 0;
+        }
+
+        @media (max-width: 500px) {
+            .contenedor { margin-top: 20px; }
+            .tarjeta { padding: 18px; }
+            .numero { font-size: 40px; }
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<header>
+    <h1>🎟️ Tu participación</h1>
+</header>
+
+
+<div class="contenedor">
+
+    {% with mensajes = get_flashed_messages() %}
+        {% if mensajes %}
+            {% for mensaje in mensajes %}
+                <div class="flash">{{ mensaje }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+
+    <div class="tarjeta">
+
+        {% if boleto.imagen_url %}
+            <img class="imagen" src="{{ boleto.imagen_url }}" alt="{{ boleto.titulo }}">
+        {% endif %}
+
+        <div class="titulo">{{ boleto.titulo }}</div>
+
+        <div class="boleto">
+            <small>TU NÚMERO DE BOLETO</small>
+            <div class="numero">#{{ boleto.numero }}</div>
+        </div>
+
+
+        <div class="progreso">
+
+            <div class="progreso-titulo">
+                Completa los 5 videos
+            </div>
+
+            <div class="barra">
+                <div class="barra-interna"></div>
+            </div>
+
+            <div class="contador">
+                {{ progreso.videos_completados }} / {{ progreso.total_videos }} videos completados
+            </div>
+
+
+            {% if progreso.videos_completados < progreso.total_videos %}
+
+                <button
+                    id="btnVerVideo"
+                    class="boton"
+                    type="button"
+                >
+                    ▶️ Ver siguiente video
+                </button>
+
+            {% else %}
+
+                <div class="completado">
+                    🎉 ¡Has completado los 5 videos!
+                    <br><br>
+                    Tu boleto ya está acreditado.
+                </div>
+
+
+                {% if boleto.estado == 'acreditado' %}
+
+                    <a href="{{ url_for('datos_participante', reserva_token=boleto.reserva_token) }}" class="boton-continuar">
+                        ➡️ Continuar con mis datos
+                    </a>
+
+                {% elif boleto.estado == 'asignado' %}
+
+                    <a href="{{ url_for('tarjeta_participacion', reserva_token=boleto.reserva_token) }}" class="boton-continuar">
+                        🎫 Ver mi comprobante
+                    </a>
+
+                {% endif %}
+
+            {% endif %}
+
+        </div>
+
+
+        {% if boleto.estado == 'reservado' %}
+
+            <div class="advertencia">
+                <strong>⏱️ Importante:</strong>
+                Tu boleto está reservado por <strong>1 hora</strong>.
+                Si no completas los 5 videos en ese tiempo, el boleto se liberará automáticamente.
+            </div>
+
+        {% endif %}
+
+    </div>
+
+
+    <a class="volver" href="{{ url_for('rifas') }}">
+        ← Volver a los sorteos
+    </a>
+
+</div>
+
+
+<!-- ============================================
+     OVERLAY MIENTRAS CARGA EL ANUNCIO
+============================================= -->
+
+<div class="overlay-ad" id="overlayAd">
+
+    <div class="spinner"></div>
+
+    <h3 id="overlayTitulo">⏳ Preparando tu video...</h3>
+
+    <p id="overlayTexto">Esto puede tomar unos segundos.</p>
+
+</div>
+
+
+<!-- ============================================
+     GOOGLE H5 GAMES ADS (Ad Placement API)
+============================================= -->
+
+<script
+    async
+    src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2084405192549609"
+    crossorigin="anonymous"
+></script>
+
+
+<script>
+
+    // ============================================================
+    // VARIABLES GLOBALES
+    // ============================================================
+
+    const boton = document.getElementById('btnVerVideo');
+    const overlay = document.getElementById('overlayAd');
+    const overlayTitulo = document.getElementById('overlayTitulo');
+    const overlayTexto = document.getElementById('overlayTexto');
+
+    // ============================================================
+// MODO SIMULADO FORZADO
+//
+// Google H5 Games Ads aún no aprueba la cuenta.
+// Mientras tanto, forzamos el modo simulado para que
+// el flujo funcione. Cuando Google apruebe, cambia
+// FORZAR_MODO_SIMULADO a false y listo.
+// ============================================================
+
+const FORZAR_MODO_SIMULADO = true;
+
+let googleAdReady = false;
+
+    // Bandera: ¿ya se intentó procesar el clic?
+    let procesando = false;
+
+
+    // ============================================================
+    // INICIALIZACIÓN DE LA API DE GOOGLE
+    // ============================================================
+
+    window.adsbygoogle = window.adsbygoogle || [];
+
+    var adBreak = adConfig = function(o) {
+        adsbygoogle.push(o);
+    };
+
+    // Intentar configurar la API
+    try {
+
+        adConfig({
+            sound: 'on',
+            preloadAdBreaks: 'auto',
+            onReady: function() {
+                console.log('✅ Google Ad Placement API lista');
+                googleAdReady = true;
+            }
+        });
+
+    } catch (error) {
+
+        console.log('⚠️ Google Ads no disponible:', error);
+
+    }
+
+
+    // ============================================================
+    // TIMEOUT DE SEGURIDAD
+    //
+    // Si en 3 segundos la API no responde con onReady,
+    // asumimos que no está aprobada y usamos el modo simulado.
+    // ============================================================
+
+    setTimeout(function() {
+
+        if (!googleAdReady) {
+            console.log('⚠️ Google Ads no respondió en 3s — usando modo simulado');
+        }
+
+    }, 3000);
+
+
+    // ============================================================
+    // FUNCIÓN: CONFIRMAR VIDEO EN EL SERVIDOR
+    // ============================================================
+
+    function confirmarEnServidor() {
+
+        return fetch(
+            '{{ url_for("confirmar_video", reserva_token=boleto.reserva_token) }}',
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                credentials: 'same-origin'
+            }
+        )
+        .then(function(response) {
+            return response.json();
+        })
+        .then(function(data) {
+
+            if (data.success) {
+                window.location.reload();
+                return true;
+            } else {
+                alert(
+                    'No se pudo confirmar el video.\n' +
+                    (data.error || 'Inténtalo de nuevo.')
+                );
+                return false;
+            }
+
+        })
+        .catch(function(error) {
+            console.error('Error:', error);
+            alert('Error de conexión. Inténtalo de nuevo.');
+            return false;
+        });
+
+    }
+
+
+    // ============================================================
+    // MODO SIMULADO (fallback cuando Google no está disponible)
+    // ============================================================
+
+    function modoSimulado() {
+
+        overlayTitulo.textContent = '⏳ Registrando tu video...';
+        overlayTexto.textContent = 'Esto toma solo un segundo.';
+        overlay.classList.add('activo');
+
+        // Pequeño delay para dar sensación de "carga"
+        setTimeout(function() {
+
+            confirmarEnServidor().then(function(ok) {
+
+                if (!ok) {
+
+                    overlay.classList.remove('activo');
+                    boton.disabled = false;
+                    boton.textContent = '▶️ Ver siguiente video';
+                    procesando = false;
+
+                }
+
+            });
+
+        }, 800);
+
+    }
+
+
+    // ============================================================
+    // MODO GOOGLE ADS (cuando esté aprobado)
+    // ============================================================
+
+    function modoGoogleAds() {
+
+        overlayTitulo.textContent = '⏳ Preparando tu video...';
+        overlayTexto.textContent = 'Esto puede tomar unos segundos.';
+        overlay.classList.add('activo');
+
+        adBreak({
+
+            type: 'reward',
+            name: 'rewarded_video',
+
+            beforeAd: function() {
+                console.log('🎬 Anuncio a punto de mostrarse');
+                overlay.classList.remove('activo');
+            },
+
+            afterAd: function() {
+                console.log('🎬 Anuncio finalizado');
+            },
+
+            beforeReward: function(showAdFn) {
+                showAdFn();
+            },
+
+            adViewed: function() {
+
+                console.log('✅ adViewed — confirmando en servidor');
+
+                confirmarEnServidor().then(function(ok) {
+
+                    if (!ok) {
+                        boton.disabled = false;
+                        boton.textContent = '▶️ Ver siguiente video';
+                        procesando = false;
+                    }
+
+                });
+
+            },
+
+            adDismissed: function() {
+
+                console.log('❌ Anuncio cerrado sin completar');
+                overlay.classList.remove('activo');
+
+                alert('Debes ver el video completo para acreditar tu boleto.');
+
+                boton.disabled = false;
+                boton.textContent = '▶️ Ver siguiente video';
+                procesando = false;
+
+            },
+
+            adBreakDone: function(placementInfo) {
+                console.log('📊 adBreakDone:', placementInfo);
+            }
+
+        });
+
+    }
+
+
+    // ============================================================
+    // CLIC EN EL BOTÓN
+    // ============================================================
+
+    if (boton) {
+
+        boton.addEventListener('click', function() {
+
+            if (procesando) return;
+
+            procesando = true;
+
+            boton.disabled = true;
+            boton.textContent = '⏳ Cargando anuncio...';
+
+
+            if (googleAdReady && !FORZAR_MODO_SIMULADO) {
+
+                // Google aprobado → modo real
+                modoGoogleAds();
+
+            } else {
+
+                // Aún sin aprobación → modo simulado
+                modoSimulado();
+
+            }
+
+        });
+
+    }
+
+</script>
+
+</body>
+
+</html>
