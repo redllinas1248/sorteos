@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Pagar boleto - {{ boleto.titulo }}</title>
+
+    <meta name="theme-color" content="#0a0d18">
+    <meta name="color-scheme" content="dark">
+
+    <style>
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #0a0d18;
+            color: #e8ecf4;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        header {
+            background: linear-gradient(135deg, #1e1b4b, #0a0d18);
+            border-bottom: 1px solid #232942;
+            color: white;
+            padding: 22px;
+            text-align: center;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 25px;
+            background: linear-gradient(135deg, #ffffff, #a5b4fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .contenedor {
+            width: 100%;
+            max-width: 650px;
+            margin: 30px auto;
+            padding: 0 15px;
+        }
+
+        .tarjeta {
+            background: #141827;
+            border: 1px solid #232942;
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .imagen {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+
+        .titulo {
+            text-align: center;
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #e8ecf4;
+        }
+
+        .boleto {
+            text-align: center;
+            background: rgba(59, 130, 246, 0.08);
+            border: 2px dashed #3b82f6;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .boleto small {
+            display: block;
+            color: #8a93ab;
+            margin-bottom: 8px;
+            font-size: 12px;
+            letter-spacing: 1px;
+        }
+
+        .numero {
+            font-size: 48px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1;
+        }
+
+        /* ============================================
+           PRECIO
+        ============================================ */
+
+        .precio-wrap {
+            text-align: center;
+            margin: 25px 0;
+            padding: 20px;
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 15px;
+        }
+
+        .precio-label {
+            color: #8a93ab;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        .precio {
+            font-size: 42px;
+            font-weight: bold;
+            color: #10b981;
+            line-height: 1;
+        }
+
+        /* ============================================
+           CUENTA REGRESIVA
+        ============================================ */
+
+        .contador-wrap {
+            text-align: center;
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(245, 158, 11, 0.08);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            border-radius: 12px;
+        }
+
+        .contador-label {
+            color: #fbbf24;
+            font-size: 13px;
+            margin-bottom: 6px;
+        }
+
+        .contador {
+            font-size: 26px;
+            font-weight: bold;
+            color: #f59e0b;
+            font-family: 'Courier New', monospace;
+        }
+
+        .contador-expirado {
+            color: #ef4444;
+        }
+
+        /* ============================================
+           MÉTODOS DE PAGO
+        ============================================ */
+
+        .titulo-seccion {
+            text-align: center;
+            font-size: 18px;
+            margin: 25px 0 20px;
+            color: #e8ecf4;
+        }
+
+        .metodos {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .metodo {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 15px;
+            background: #0a0d18;
+            border: 2px solid #232942;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .metodo:hover {
+            border-color: #3b82f6;
+            transform: translateY(-2px);
+        }
+
+        .metodo.seleccionado {
+            border-color: #8b5cf6;
+            background: rgba(139, 92, 246, 0.08);
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.25);
+        }
+
+        .metodo-icono {
+            font-size: 40px;
+            margin-bottom: 10px;
+        }
+
+        .metodo-nombre {
+            font-weight: bold;
+            font-size: 15px;
+            color: #e8ecf4;
+            margin-bottom: 5px;
+        }
+
+        .metodo-desc {
+            font-size: 12px;
+            color: #8a93ab;
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        /* ============================================
+           BOTÓN PAGAR
+        ============================================ */
+
+        .boton-pagar {
+            width: 100%;
+            border: none;
+            border-radius: 12px;
+            padding: 18px;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+            transition: 0.2s;
+        }
+
+        .boton-pagar:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 28px rgba(16, 185, 129, 0.6);
+        }
+
+        .boton-pagar:disabled {
+            background: #374151;
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+        }
+
+        .advertencia {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(245, 158, 11, 0.08);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            border-radius: 12px;
+            color: #fbbf24;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .advertencia strong { color: #f59e0b; }
+
+        .volver {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #a5b4fc;
+            text-decoration: none;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        .volver:hover { color: #8b5cf6; }
+
+        .flash {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #fca5a5;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        /* ============================================
+           OVERLAY DE CARGA
+        ============================================ */
+
+        .overlay-pago {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(6px);
+            color: white;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            z-index: 9999;
+            text-align: center;
+            padding: 30px;
+        }
+
+        .overlay-pago.activo { display: flex; }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 5px solid rgba(139, 92, 246, 0.2);
+            border-top-color: #8b5cf6;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .overlay-pago h3 {
+            margin: 0 0 8px;
+            font-size: 20px;
+        }
+
+        .overlay-pago p {
+            color: #a5b4fc;
+            font-size: 14px;
+            margin: 0;
+        }
+
+        @media (max-width: 500px) {
+
+            .contenedor { margin-top: 20px; }
+            .tarjeta { padding: 18px; }
+            .numero { font-size: 40px; }
+            .precio { font-size: 34px; }
+            .contador { font-size: 22px; }
+            .metodos { grid-template-columns: 1fr; }
+
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<header>
+    <h1>💳 Completar pago</h1>
+</header>
+
+
+<div class="contenedor">
+
+    {% with mensajes = get_flashed_messages() %}
+        {% if mensajes %}
+            {% for mensaje in mensajes %}
+                <div class="flash">{{ mensaje }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+
+    <div class="tarjeta">
+
+        {% if boleto.imagen_url %}
+            <img class="imagen" src="{{ boleto.imagen_url }}" alt="{{ boleto.titulo }}">
+        {% endif %}
+
+        <div class="titulo">{{ boleto.titulo }}</div>
+
+        <div class="boleto">
+            <small>TU BOLETO</small>
+            <div class="numero">#{{ boleto.numero }}</div>
+        </div>
+
+
+        <!-- PRECIO -->
+        <div class="precio-wrap">
+            <div class="precio-label">Total a pagar</div>
+            <div class="precio">${{ "%.2f"|format(boleto.precio_boleto) }} MXN</div>
+        </div>
+
+
+        <!-- CUENTA REGRESIVA -->
+        <div class="contador-wrap">
+            <div class="contador-label">⏱️ Tiempo restante para completar el pago</div>
+            <div class="contador" id="contador">--:--</div>
+        </div>
+
+
+        <!-- FORMULARIO -->
+        <form id="formPago" method="POST" action="/rifas/pago/{{ boleto.reserva_token }}/checkout">
+
+            <div class="titulo-seccion">Elige tu método de pago</div>
+
+            <div class="metodos">
+
+                <label class="metodo seleccionado" id="metodo-card">
+                    <input type="radio" name="metodo" value="card" checked style="display:none">
+                    <div class="metodo-icono">💳</div>
+                    <div class="metodo-nombre">Tarjeta</div>
+                    <div class="metodo-desc">Crédito o débito<br>Pago inmediato</div>
+                </label>
+
+                <label class="metodo" id="metodo-oxxo">
+                    <input type="radio" name="metodo" value="oxxo" style="display:none">
+                    <div class="metodo-icono">🏪</div>
+                    <div class="metodo-nombre">OXXO</div>
+                    <div class="metodo-desc">Paga en efectivo<br>En cualquier OXXO</div>
+                </label>
+
+            </div>
+
+
+            <button type="submit" class="boton-pagar" id="btnPagar">
+                🔒 Pagar ahora
+            </button>
+
+        </form>
+
+
+        <div class="advertencia">
+            <strong>⏱️ Importante:</strong>
+            Tu boleto está reservado por <strong>{{ minutos_restantes }} minutos</strong>.
+            Si no completas el pago en ese tiempo, el boleto se liberará automáticamente.
+        </div>
+
+    </div>
+
+
+    <a class="volver" href="/rifas">
+        ← Volver a los sorteos
+    </a>
+
+</div>
+
+
+<!-- OVERLAY DE CARGA -->
+<div class="overlay-pago" id="overlayPago">
+    <div class="spinner"></div>
+    <h3>⏳ Redirigiendo a la pasarela de pago...</h3>
+    <p>Por favor no cierres esta ventana.</p>
+</div>
+
+
+<script>
+
+    // ============================================================
+    // SELECCIÓN DE MÉTODO DE PAGO
+    // ============================================================
+
+    const metodoCard = document.getElementById('metodo-card');
+    const metodoOxxo = document.getElementById('metodo-oxxo');
+    const inputCard = metodoCard.querySelector('input');
+    const inputOxxo = metodoOxxo.querySelector('input');
+
+    metodoCard.addEventListener('click', function(e) {
+        e.preventDefault();
+        metodoCard.classList.add('seleccionado');
+        metodoOxxo.classList.remove('seleccionado');
+        inputCard.checked = true;
+    });
+
+    metodoOxxo.addEventListener('click', function(e) {
+        e.preventDefault();
+        metodoOxxo.classList.add('seleccionado');
+        metodoCard.classList.remove('seleccionado');
+        inputOxxo.checked = true;
+    });
+
+
+    // ============================================================
+    // CUENTA REGRESIVA
+    // ============================================================
+
+    // Tiempo de reserva en minutos (viene del backend)
+    const minutosTotales = {{ minutos_restantes }};
+
+    // Hora en que se reservó el boleto (timestamp ISO)
+    const reservadoEn = new Date("{{ boleto.reservado_en.isoformat() if boleto.reservado_en else '' }}");
+
+    // Hora de expiración
+    const expiraEn = new Date(reservadoEn.getTime() + minutosTotales * 60 * 1000);
+
+    const contadorEl = document.getElementById('contador');
+    const btnPagar = document.getElementById('btnPagar');
+
+    function actualizarContador() {
+
+        const ahora = new Date();
+        const diff = expiraEn - ahora;
+
+        if (diff <= 0) {
+            contadorEl.textContent = '00:00';
+            contadorEl.classList.add('contador-expirado');
+            btnPagar.disabled = true;
+            btnPagar.textContent = '❌ Tiempo agotado';
+            return;
+        }
+
+        const mins = Math.floor(diff / 60000);
+        const segs = Math.floor((diff % 60000) / 1000);
+
+        contadorEl.textContent =
+            String(mins).padStart(2, '0') + ':' +
+            String(segs).padStart(2, '0');
+
+    }
+
+    actualizarContador();
+    setInterval(actualizarContador, 1000);
+
+
+    // ============================================================
+    // SUBMIT DEL FORMULARIO
+    // ============================================================
+
+    const form = document.getElementById('formPago');
+    const overlay = document.getElementById('overlayPago');
+
+    form.addEventListener('submit', function() {
+
+        btnPagar.disabled = true;
+        btnPagar.textContent = '⏳ Redirigiendo...';
+        overlay.classList.add('activo');
+
+    });
+
+</script>
+
+</body>
+
+</html>
