@@ -472,14 +472,8 @@
     // CUENTA REGRESIVA
     // ============================================================
 
-    // Tiempo de reserva en minutos (viene del backend)
-    const minutosTotales = {{ minutos_restantes }};
-
-    // Hora en que se reservó el boleto (timestamp ISO)
-    const reservadoEn = new Date("{{ boleto.reservado_en.isoformat() if boleto.reservado_en else '' }}");
-
-    // Hora de expiración
-    const expiraEn = new Date(reservadoEn.getTime() + minutosTotales * 60 * 1000);
+    // Timestamp de expiración enviado por el backend (en milisegundos UNIX)
+    const expiraEn = new Date({{ expira_en_ms or 0 }});
 
     const contadorEl = document.getElementById('contador');
     const btnPagar = document.getElementById('btnPagar');

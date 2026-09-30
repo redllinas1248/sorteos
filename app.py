@@ -452,11 +452,34 @@ def pago(reserva_token):
                 url_for("tarjeta_participacion", reserva_token=reserva_token)
             )
 
+        # ----------------------------------------------------
+        # Calcular timestamp de expiración (en milisegundos UNIX)
+        #
+        # PostgreSQL devuelve reservado_en en UTC sin timezone.
+        # Lo tratamos explícitamente como UTC y calculamos la
+        # expiración para que el frontend la use directamente.
+        # ----------------------------------------------------
+
+        expira_en_ms = None
+
+        if boleto["reservado_en"]:
+
+            reservado_utc = boleto["reservado_en"].replace(
+                tzinfo=timezone.utc
+            )
+
+            expira_en = reservado_utc + timedelta(
+                minutes=RESERVA_TTL_MINUTOS
+            )
+
+            expira_en_ms = int(expira_en.timestamp() * 1000)
+
         return render_template(
             "pago.html",
             boleto=boleto,
             stripe_public_key=STRIPE_PUBLIC_KEY,
-            minutos_restantes=RESERVA_TTL_MINUTOS
+            minutos_restantes=RESERVA_TTL_MINUTOS,
+            expira_en_ms=expira_en_ms
         )
 
     finally:
