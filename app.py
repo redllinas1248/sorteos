@@ -736,50 +736,138 @@ def stripe_webhook():
 
         return "", 400
 
-    # Manejar el evento
-    if event["type"] == "checkout.session.completed":
+    # ============================================================
+    # CONVERTIR STRIPE OBJECT A DICT
+    #
+    # La librería de Stripe devuelve objetos especiales (StripeObject)
+    # que NO tienen el método .get(). Los convertimos a dict con
+    # .to_dict() para poder usar .get() sin problemas.
+    # ============================================================
 
-        session_data = event["data"]["object"]
+    event_dict = event.to_dict() if hasattr(event, "to_dict") else event
+
+    event_type = event_dict["type"]
+    session_data = event_dict["data"]["object"]
+
+    # ============================================================
+    # EVENTO: CHECKOUT SESSION COMPLETED
+    # ============================================================
+
+    if event_type == "checkout.session.completed":
 
         session_id = session_data["id"]
-
-        metadata = session_data.get("metadata", {})
-
+        payment_status = session_data.get("payment_status", "")
+        metadata = session_data.get("metadata", {}) or {}
         boleto_id = metadata.get("boleto_id")
+        monto = (session_data.get("amount_total") or 0) / 100
 
-        monto = session_data.get("amount_total", 0) / 100
+        print(
+            f"Webhook: session={session_id}, "
+            f"status={payment_status}, boleto={boleto_id}"
+        )
 
-        db = get_db()
+        # ----------------------------------------------------
+        # Solo marcar como pagado si el pago está confirmado
+        #
+        # - Tarjeta: payment_status = "paid"  → marcar pagado
+        # - OXXO:    payment_status = "unpaid" → esperar async
+        # ----------------------------------------------------
 
-        try:
+        if payment_status == "paid" and boleto_id:
 
-            cursor = db.cursor()
+            db = get_db()
 
-            cursor.execute("""
-                UPDATE sp_boletos
-                SET
-                    estado = 'pagado',
-                    pagado_en = NOW(),
-                    monto_pagado = %s,
-                    actualizado_en = NOW()
-                WHERE
-                    id = %s
-                    AND estado = 'reservado'
-            """, (monto, boleto_id))
+            try:
 
-            db.commit()
+                cursor = db.cursor()
 
-            print(f"✅ Pago confirmado para boleto {boleto_id}")
+                cursor.execute("""
+                    UPDATE sp_boletos
+                    SET
+                        estado = 'pagado',
+                        pagado_en = NOW(),
+                        monto_pagado = %s,
+                        actualizado_en = NOW()
+                    WHERE
+                        id = %s
+                        AND estado = 'reservado'
+                """, (monto, boleto_id))
 
-        except Exception as e:
+                db.commit()
 
-            db.rollback()
+                print(f"✅ Pago confirmado para boleto {boleto_id}")
 
-            print("Error al procesar webhook:", e)
+            except Exception as e:
 
-        finally:
+                db.rollback()
 
-            db.close()
+                print("Error al procesar webhook:", e)
+
+            finally:
+
+                db.close()
+
+        else:
+
+            print(
+                f"ℹ️ Webhook recibido (status={payment_status}) "
+                f"sin marcar como pagado"
+            )
+
+    # ============================================================
+    # EVENTO: ASYNC PAYMENT SUCCEEDED (OXXO pagado en tienda)
+    # ============================================================
+
+    elif event_type == "checkout.session.async_payment_succeeded":
+
+        session_id = session_data["id"]
+        metadata = session_data.get("metadata", {}) or {}
+        boleto_id = metadata.get("boleto_id")
+        monto = (session_data.get("amount_total") or 0) / 100
+
+        print(f"Webhook async: session={session_id}, boleto={boleto_id}")
+
+        if boleto_id:
+
+            db = get_db()
+
+            try:
+
+                cursor = db.cursor()
+
+                cursor.execute("""
+                    UPDATE sp_boletos
+                    SET
+                        estado = 'pagado',
+                        pagado_en = NOW(),
+                        monto_pagado = %s,
+                        actualizado_en = NOW()
+                    WHERE
+                        id = %s
+                        AND estado = 'reservado'
+                """, (monto, boleto_id))
+
+                db.commit()
+
+                print(f"✅ Pago asíncrono confirmado para boleto {boleto_id}")
+
+            except Exception as e:
+
+                db.rollback()
+
+                print("Error al procesar webhook async:", e)
+
+            finally:
+
+                db.close()
+
+    # ============================================================
+    # OTROS EVENTOS (no manejados)
+    # ============================================================
+
+    else:
+
+        print(f"ℹ️ Evento recibido sin manejar: {event_type}")
 
     return "", 200
 
