@@ -1327,7 +1327,7 @@ def admin_logout():
 # ============================================================
 
 @app.route("/rifas/admin")
-@@super_admin_required
+@super_admin_required
 def admin_rifas():
 
     db = get_db()
@@ -1459,7 +1459,7 @@ def admin_rifas():
 # ============================================================
 
 @app.route("/rifas/admin/participantes/<int:rifa_id>")
-@@super_admin_required
+@super_admin_required
 def admin_participantes(rifa_id):
 
     db = get_db()
@@ -1529,7 +1529,7 @@ def admin_participantes(rifa_id):
     "/rifas/admin/liberar-boleto/<int:boleto_id>",
     methods=["POST"]
 )
-@@super_admin_required
+@super_admin_required
 def admin_liberar_boleto(boleto_id):
 
     db = get_db()
@@ -1614,7 +1614,7 @@ def admin_liberar_boleto(boleto_id):
 # ============================================================
 
 @app.route("/rifas/admin/tickets/<int:rifa_id>")
-@@super_admin_required
+@super_admin_required
 def admin_tickets(rifa_id):
 
     db = get_db()
@@ -1666,13 +1666,13 @@ def admin_tickets(rifa_id):
 # ============================================================
 
 @app.route("/rifas/admin/nueva")
-@@super_admin_required
+@super_admin_required
 def nueva_rifa():
     return render_template("nueva_rifa.html")
 
 
 @app.route("/rifas/admin/nueva", methods=["POST"])
-@@super_admin_required
+@super_admin_required
 def crear_rifa():
 
     titulo = request.form.get("titulo", "").strip()
@@ -1783,7 +1783,7 @@ def crear_rifa():
 # ============================================================
 
 @app.route("/rifas/admin/editar/<int:rifa_id>")
-@@super_admin_required
+@super_admin_required
 def editar_rifa(rifa_id):
 
     db = get_db()
@@ -1821,7 +1821,7 @@ def editar_rifa(rifa_id):
 
 
 @app.route("/rifas/admin/editar/<int:rifa_id>", methods=["POST"])
-@@super_admin_required
+@super_admin_required
 def actualizar_rifa(rifa_id):
 
     titulo = request.form.get("titulo", "").strip()
@@ -1925,7 +1925,7 @@ def actualizar_rifa(rifa_id):
 # ============================================================
 
 @app.route("/rifas/admin/publicar/<int:rifa_id>", methods=["POST"])
-@@super_admin_required
+@super_admin_required
 def publicar_rifa(rifa_id):
 
     db = get_db()
@@ -1963,7 +1963,7 @@ def publicar_rifa(rifa_id):
 
 
 @app.route("/rifas/admin/pausar/<int:rifa_id>", methods=["POST"])
-@@super_admin_required
+@super_admin_required
 def pausar_rifa(rifa_id):
 
     db = get_db()
@@ -2001,7 +2001,7 @@ def pausar_rifa(rifa_id):
 
 
 @app.route("/rifas/admin/reanudar/<int:rifa_id>", methods=["POST"])
-@@super_admin_required
+@super_admin_required
 def reanudar_rifa(rifa_id):
 
     db = get_db()
@@ -2039,7 +2039,7 @@ def reanudar_rifa(rifa_id):
 
 
 @app.route("/rifas/admin/finalizar/<int:rifa_id>", methods=["POST"])
-@@super_admin_required
+@super_admin_required
 def finalizar_rifa(rifa_id):
 
     db = get_db()
@@ -2077,7 +2077,7 @@ def finalizar_rifa(rifa_id):
 
 
 @app.route("/rifas/admin/cancelar/<int:rifa_id>", methods=["POST"])
-@@super_admin_required
+@super_admin_required
 def cancelar_rifa(rifa_id):
 
     db = get_db()
@@ -2126,7 +2126,7 @@ def cancelar_rifa(rifa_id):
 # ============================================================
 
 @app.route("/rifas/admin/clonar/<int:rifa_id>", methods=["POST"])
-@@super_admin_required
+@super_admin_required
 def clonar_rifa(rifa_id):
 
     db = get_db()
@@ -2389,7 +2389,7 @@ def mi_panel():
 # ============================================================
 
 @app.route("/rifas/admin/admins")
-@@super_admin_required
+@super_admin_required
 def admin_usuarios():
 
     db = get_db()
@@ -2424,13 +2424,13 @@ def admin_usuarios():
 
 
 @app.route("/rifas/admin/admins/nuevo")
-@@super_admin_required
+@super_admin_required
 def nuevo_admin():
     return render_template("nuevo_admin.html")
 
 
 @app.route("/rifas/admin/admins/nuevo", methods=["POST"])
-@@super_admin_required
+@super_admin_required
 def crear_admin():
 
     username = request.form.get("username", "").strip().lower()
@@ -2529,7 +2529,7 @@ def crear_admin():
 
 
 @app.route("/rifas/admin/admins/toggle/<int:admin_id>", methods=["POST"])
-@@super_admin_required
+@super_admin_required
 def toggle_admin(admin_id):
 
     db = get_db()
@@ -2580,7 +2580,7 @@ def toggle_admin(admin_id):
 
 
 @app.route("/rifas/admin/admins/eliminar/<int:admin_id>", methods=["POST"])
-@@super_admin_required
+@super_admin_required
 def eliminar_admin(admin_id):
 
     db = get_db()
