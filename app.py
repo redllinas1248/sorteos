@@ -649,14 +649,6 @@ def iniciar_pago(reserva_token):
         db.close()
 
 
-# ============================================================
-# PAGO EXITOSO (redirect de Stripe)
-#
-# Los datos del participante ya están guardados (los capturamos
-# al iniciar el pago). Aquí solo marcamos como pagado y
-# asignado, y redirigimos a la tarjeta final.
-# ============================================================
-
 @app.route("/rifas/pago/<reserva_token>/exito")
 def pago_exito(reserva_token):
 
@@ -687,20 +679,21 @@ def pago_exito(reserva_token):
 
             return redirect(url_for("rifas"))
 
-        # Verificar que el pago esté completo
+        # ----------------------------------------------------
+        # Si el pago NO está confirmado (OXXO pendiente)
+        # → mandar a pantalla de "esperando pago"
+        # ----------------------------------------------------
+
         if checkout_session.payment_status not in ("paid", "no_payment_required"):
 
-            flash(
-                "El pago aún no está confirmado. "
-                "Si pagaste en OXXO, espera la confirmación.",
-                "error"
-            )
-
             return redirect(
-                url_for("pago", reserva_token=reserva_token)
+                url_for("pago_pendiente", reserva_token=reserva_token)
             )
 
-        # Marcar boleto como pagado Y asignado
+        # ----------------------------------------------------
+        # Pago confirmado (Tarjeta) → marcar como asignado
+        # ----------------------------------------------------
+
         cursor.execute("""
             UPDATE sp_boletos
             SET
@@ -719,9 +712,60 @@ def pago_exito(reserva_token):
 
         db.commit()
 
-        # Ir directo a la tarjeta final
         return redirect(
             url_for("tarjeta_participacion", reserva_token=reserva_token)
+        )
+
+    finally:
+
+        db.close()
+
+# ============================================================
+# PAGO PENDIENTE (OXXO generado, esperando pago en tienda)
+# ============================================================
+
+@app.route("/rifas/pago/<reserva_token>/pendiente")
+def pago_pendiente(reserva_token):
+
+    db = get_db()
+
+    try:
+
+        cursor = db.cursor()
+
+        cursor.execute("""
+            SELECT
+                b.id,
+                b.rifa_id,
+                b.numero,
+                b.estado,
+                b.reserva_token,
+                b.nombre,
+                b.numero_especial,
+                b.metodo_pago,
+                b.pagado_en,
+                b.stripe_session_id,
+                r.titulo,
+                r.descripcion,
+                r.imagen_url,
+                r.precio_boleto
+            FROM sp_boletos b
+            INNER JOIN sp_rifas r
+                ON r.id = b.rifa_id
+            WHERE b.reserva_token = %s
+        """, (reserva_token,))
+
+        boleto = cursor.fetchone()
+
+        if not boleto:
+
+            flash("La reserva no existe.", "error")
+
+            return redirect(url_for("rifas"))
+
+        return render_template(
+            "pago_pendiente.html",
+            boleto=boleto
         )
 
     finally:

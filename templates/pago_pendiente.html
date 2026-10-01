@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Pago pendiente - {{ boleto.titulo }}</title>
+
+    <meta name="theme-color" content="#0a0d18">
+    <meta name="color-scheme" content="dark">
+
+    <style>
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #0a0d18;
+            color: #e8ecf4;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        header {
+            background: linear-gradient(135deg, #f59e0b, #b45309);
+            color: white;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(245, 158, 11, 0.3);
+        }
+
+        header h1 { margin: 0; font-size: 26px; }
+
+        .contenedor {
+            width: 100%;
+            max-width: 620px;
+            margin: 30px auto;
+            padding: 0 15px;
+        }
+
+        .tarjeta {
+            background: #141827;
+            border: 1px solid #232942;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+
+        .icono-grande {
+            text-align: center;
+            font-size: 70px;
+            margin-bottom: 15px;
+        }
+
+        .titulo {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #fbbf24;
+        }
+
+        .subtitulo {
+            text-align: center;
+            color: #8a93ab;
+            margin-bottom: 25px;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .instrucciones {
+            background: rgba(245, 158, 11, 0.08);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .instrucciones h3 {
+            margin: 0 0 15px;
+            font-size: 16px;
+            color: #fbbf24;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .instrucciones ol {
+            margin: 0;
+            padding-left: 20px;
+            color: #e8ecf4;
+            line-height: 1.9;
+            font-size: 15px;
+        }
+
+        .instrucciones li {
+            margin-bottom: 8px;
+        }
+
+        .instrucciones strong {
+            color: #fbbf24;
+        }
+
+        .boleto-info {
+            text-align: center;
+            background: rgba(59, 130, 246, 0.08);
+            border: 2px dashed #3b82f6;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 25px;
+        }
+
+        .boleto-info small {
+            display: block;
+            color: #8a93ab;
+            margin-bottom: 6px;
+            font-size: 12px;
+            letter-spacing: 1px;
+        }
+
+        .boleto-numero {
+            font-size: 32px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .codigo-reserva {
+            background: #0a0d18;
+            border: 1px solid #232942;
+            padding: 18px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .codigo-reserva small {
+            display: block;
+            color: #8a93ab;
+            margin-bottom: 8px;
+            font-size: 12px;
+            letter-spacing: 1px;
+        }
+
+        .codigo-reserva code {
+            color: #a5b4fc;
+            font-weight: bold;
+            font-size: 14px;
+            word-break: break-all;
+            display: block;
+        }
+
+        .aviso-guardar {
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 25px;
+            text-align: center;
+            font-size: 14px;
+            color: #34d399;
+            line-height: 1.6;
+        }
+
+        .aviso-guardar strong {
+            color: #10b981;
+        }
+
+        .acciones {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .boton {
+            display: block;
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 15px;
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+            transition: 0.2s;
+        }
+
+        .boton-primario {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: white;
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+        }
+
+        .boton-primario:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 28px rgba(139, 92, 246, 0.6);
+        }
+
+        .boton-secundario {
+            background: #1e293b;
+            color: #e8ecf4;
+            border: 1px solid #232942;
+        }
+
+        .boton-secundario:hover {
+            background: #232942;
+        }
+
+        .volver {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #a5b4fc;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .volver:hover { color: #8b5cf6; }
+
+    </style>
+
+</head>
+
+<body>
+
+<header>
+    <h1>⏳ Pago en proceso</h1>
+</header>
+
+
+<div class="contenedor">
+
+    <div class="tarjeta">
+
+        <div class="icono-grande">🏪</div>
+
+        <div class="titulo">Pago pendiente en OXXO</div>
+
+        <div class="subtitulo">
+            Tu voucher está listo. Paga en cualquier tienda OXXO
+            para completar tu participación.
+        </div>
+
+
+        <!-- BOLETO -->
+        <div class="boleto-info">
+            <small>TU BOLETO</small>
+            <div class="boleto-numero">#{{ boleto.numero }}</div>
+        </div>
+
+
+        <!-- INSTRUCCIONES -->
+        <div class="instrucciones">
+
+            <h3>📋 Pasos a seguir</h3>
+
+            <ol>
+                <li>
+                    <strong>Guarda o imprime</strong> tu voucher de OXXO
+                    (lo recibiste en la pantalla anterior).
+                </li>
+                <li>
+                    <strong>Ve a cualquier tienda OXXO</strong> y paga en efectivo
+                    el monto indicado.
+                </li>
+                <li>
+                    <strong>Recibirás un correo</strong> de Stripe cuando
+                    se confirme tu pago (puede tardar hasta 48 horas).
+                </li>
+                <li>
+                    <strong>Vuelve a este sitio</strong> con tu código
+                    de participación para ver tu comprobante final.
+                </li>
+            </ol>
+
+        </div>
+
+
+        <!-- CÓDIGO DE PARTICIPACIÓN -->
+        <div class="codigo-reserva">
+            <small>📌 GUARDA ESTE CÓDIGO</small>
+            <code>{{ boleto.reserva_token }}</code>
+        </div>
+
+
+        <!-- AVISO -->
+        <div class="aviso-guardar">
+            <strong>⚠️ Importante:</strong>
+            Guarda este código o toma captura de pantalla.
+            Lo necesitarás para consultar tu participación cuando
+            confirmes el pago.
+        </div>
+
+
+        <!-- ACCIONES -->
+        <div class="acciones">
+
+            <button onclick="guardarComoImagen()" class="boton boton-primario">
+                📥 Guardar comprobante como imagen
+            </button>
+
+            <button onclick="copiarCodigo()" class="boton boton-secundario">
+                📋 Copiar código de participación
+            </button>
+
+            <a href="/rifas/consultar" class="boton boton-secundario">
+                🔍 Consultar mi participación después
+            </a>
+
+        </div>
+
+    </div>
+
+
+    <a class="volver" href="/rifas">
+        ← Volver a los sorteos
+    </a>
+
+</div>
+
+
+<script>
+
+    // ============================================================
+    // COPIAR CÓDIGO
+    // ============================================================
+
+    function copiarCodigo() {
+
+        const codigo = "{{ boleto.reserva_token }}";
+
+        navigator.clipboard.writeText(codigo).then(function() {
+
+            alert('✅ Código copiado al portapapeles:\n\n' + codigo);
+
+        }).catch(function() {
+
+            // Fallback para navegadores viejos
+            prompt('Copia tu código manualmente:', codigo);
+
+        });
+
+    }
+
+
+    // ============================================================
+    // GUARDAR COMO IMAGEN (simple: instrucciones)
+    // ============================================================
+
+    function guardarComoImagen() {
+
+        alert(
+            '📸 Toma una captura de pantalla de esta página.\n\n' +
+            'Tu código de participación es:\n\n' +
+            '{{ boleto.reserva_token }}'
+        );
+
+    }
+
+</script>
+
+</body>
+
+</html>
