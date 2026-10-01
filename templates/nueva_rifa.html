@@ -74,14 +74,20 @@
         }
 
         input,
-        textarea {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #d1d5db;
-            border-radius: 9px;
-            font-size: 15px;
-            font-family: Arial, sans-serif;
-        }
+textarea,
+select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #d1d5db;
+    border-radius: 9px;
+    font-size: 15px;
+    font-family: Arial, sans-serif;
+    background: white;
+}
+
+select {
+    cursor: pointer;
+}
 
         input:focus,
         textarea:focus {
@@ -278,6 +284,35 @@
 
             </div>
 
+
+                        <!-- PROPIETARIO -->
+
+            <div class="campo">
+
+                <label for="propietario_slug">
+                    👤 Propietario del sorteo
+                </label>
+
+                <select id="propietario_slug" name="propietario_slug">
+
+                    <option value="admin" {% if modo_edicion and rifa.propietario_slug == 'admin' %}selected{% endif %}>
+    👑 Admin (yo)
+</option>
+
+                    {% for u in usuarios %}
+                        <option value="{{ u.propietario_slug }}"
+                            {% if modo_edicion and rifa.propietario_slug == u.propietario_slug %}selected{% endif %}>
+                            {{ u.nombre }} (@{{ u.username }})
+                        </option>
+                    {% endfor %}
+
+                </select>
+
+                <span class="ayuda">
+                    Selecciona quién verá las estadísticas de este sorteo en su panel personal.
+                </span>
+
+            </div>
 
             <!-- IMAGEN -->
 

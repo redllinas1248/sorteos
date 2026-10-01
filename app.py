@@ -1668,7 +1668,35 @@ def admin_tickets(rifa_id):
 @app.route("/rifas/admin/nueva")
 @super_admin_required
 def nueva_rifa():
-    return render_template("nueva_rifa.html")
+
+    db = get_db()
+
+    try:
+
+        cursor = db.cursor()
+
+        # Obtener usuarios disponibles para asignar como propietarios
+        cursor.execute("""
+            SELECT
+                id,
+                username,
+                nombre,
+                propietario_slug
+            FROM sp_admins
+            WHERE activo = TRUE
+            ORDER BY nombre
+        """)
+
+        usuarios = cursor.fetchall()
+
+        return render_template(
+            "nueva_rifa.html",
+            usuarios=usuarios
+        )
+
+    finally:
+
+        db.close()
 
 
 @app.route("/rifas/admin/nueva", methods=["POST"])
@@ -1683,37 +1711,26 @@ def crear_rifa():
     fecha_inicio = request.form.get("fecha_inicio", "").strip()
     fecha_fin = request.form.get("fecha_fin", "").strip()
     fecha_sorteo = request.form.get("fecha_sorteo", "").strip()
+    propietario_slug = request.form.get("propietario_slug", "admin").strip().lower() or "admin"
 
     if not titulo:
-
         flash("El título del sorteo es obligatorio.", "error")
-
         return redirect(url_for("nueva_rifa"))
 
     try:
-
         cantidad_boletos = int(cantidad_boletos)
-
         if cantidad_boletos <= 0:
             raise ValueError
-
     except (ValueError, TypeError):
-
         flash("La cantidad de boletos debe ser mayor que cero.", "error")
-
         return redirect(url_for("nueva_rifa"))
 
     try:
-
         precio_boleto = float(precio_boleto)
-
         if precio_boleto <= 0:
             raise ValueError
-
     except (ValueError, TypeError):
-
         flash("El precio del boleto debe ser mayor que cero.", "error")
-
         return redirect(url_for("nueva_rifa"))
 
     db = get_db()
@@ -1722,11 +1739,25 @@ def crear_rifa():
 
         cursor = db.cursor()
 
+        # Validar que el propietario exista (si no es "admin")
+        if propietario_slug != "admin":
+            cursor.execute("""
+                SELECT id FROM sp_admins
+                WHERE propietario_slug = %s
+                  AND activo = TRUE
+            """, (propietario_slug,))
+
+            if not cursor.fetchone():
+                flash("El propietario seleccionado no existe o está inactivo.", "error")
+                return redirect(url_for("nueva_rifa"))
+
+        # Crear la rifa con propietario
         cursor.execute("""
             INSERT INTO sp_rifas (
                 titulo, descripcion, imagen_url,
                 cantidad_boletos, precio_boleto, estado,
                 fecha_inicio, fecha_fin, fecha_sorteo,
+                propietario_slug,
                 creado_en, actualizado_en
             )
             VALUES (
@@ -1734,19 +1765,21 @@ def crear_rifa():
                 NULLIF(%s, '')::timestamp,
                 NULLIF(%s, '')::timestamp,
                 NULLIF(%s, '')::timestamp,
+                %s,
                 NOW(), NOW()
             )
             RETURNING id
         """, (
             titulo, descripcion, imagen_url,
             cantidad_boletos, precio_boleto,
-            fecha_inicio, fecha_fin, fecha_sorteo
+            fecha_inicio, fecha_fin, fecha_sorteo,
+            propietario_slug
         ))
 
         rifa_id = cursor.fetchone()["id"]
 
+        # Crear boletos
         for numero in range(1, cantidad_boletos + 1):
-
             cursor.execute("""
                 INSERT INTO sp_boletos (
                     rifa_id, numero, estado, origen, creado_en
@@ -1796,7 +1829,8 @@ def editar_rifa(rifa_id):
             SELECT
                 id, titulo, descripcion, imagen_url,
                 cantidad_boletos, precio_boleto, estado,
-                fecha_inicio, fecha_fin, fecha_sorteo
+                fecha_inicio, fecha_fin, fecha_sorteo,
+                propietario_slug
             FROM sp_rifas
             WHERE id = %s
         """, (rifa_id,))
@@ -1804,14 +1838,27 @@ def editar_rifa(rifa_id):
         rifa = cursor.fetchone()
 
         if not rifa:
-
             flash("El sorteo no existe.", "error")
-
             return redirect(url_for("admin_rifas"))
+
+        # Obtener usuarios disponibles
+        cursor.execute("""
+            SELECT
+                id,
+                username,
+                nombre,
+                propietario_slug
+            FROM sp_admins
+            WHERE activo = TRUE
+            ORDER BY nombre
+        """)
+
+        usuarios = cursor.fetchall()
 
         return render_template(
             "nueva_rifa.html",
             rifa=rifa,
+            usuarios=usuarios,
             modo_edicion=True
         )
 
@@ -1832,37 +1879,26 @@ def actualizar_rifa(rifa_id):
     fecha_inicio = request.form.get("fecha_inicio", "").strip()
     fecha_fin = request.form.get("fecha_fin", "").strip()
     fecha_sorteo = request.form.get("fecha_sorteo", "").strip()
+    propietario_slug = request.form.get("propietario_slug", "admin").strip().lower() or "admin"
 
     if not titulo:
-
         flash("El título del sorteo es obligatorio.", "error")
-
         return redirect(url_for("editar_rifa", rifa_id=rifa_id))
 
     try:
-
         cantidad_boletos = int(cantidad_boletos)
-
         if cantidad_boletos <= 0:
             raise ValueError
-
     except (ValueError, TypeError):
-
         flash("La cantidad de boletos no es válida.", "error")
-
         return redirect(url_for("editar_rifa", rifa_id=rifa_id))
 
     try:
-
         precio_boleto = float(precio_boleto)
-
         if precio_boleto <= 0:
             raise ValueError
-
     except (ValueError, TypeError):
-
         flash("El precio del boleto no es válido.", "error")
-
         return redirect(url_for("editar_rifa", rifa_id=rifa_id))
 
     db = get_db()
@@ -1870,6 +1906,18 @@ def actualizar_rifa(rifa_id):
     try:
 
         cursor = db.cursor()
+
+        # Validar propietario si no es "admin"
+        if propietario_slug != "admin":
+            cursor.execute("""
+                SELECT id FROM sp_admins
+                WHERE propietario_slug = %s
+                  AND activo = TRUE
+            """, (propietario_slug,))
+
+            if not cursor.fetchone():
+                flash("El propietario seleccionado no existe o está inactivo.", "error")
+                return redirect(url_for("editar_rifa", rifa_id=rifa_id))
 
         cursor.execute("""
             UPDATE sp_rifas
@@ -1882,21 +1930,20 @@ def actualizar_rifa(rifa_id):
                 fecha_inicio = NULLIF(%s, '')::timestamp,
                 fecha_fin = NULLIF(%s, '')::timestamp,
                 fecha_sorteo = NULLIF(%s, '')::timestamp,
+                propietario_slug = %s,
                 actualizado_en = NOW()
             WHERE id = %s
         """, (
             titulo, descripcion, imagen_url,
             cantidad_boletos, precio_boleto,
             fecha_inicio, fecha_fin, fecha_sorteo,
+            propietario_slug,
             rifa_id
         ))
 
         if cursor.rowcount == 0:
-
             db.rollback()
-
             flash("El sorteo no existe.", "error")
-
             return redirect(url_for("admin_rifas"))
 
         db.commit()
