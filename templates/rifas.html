@@ -5,17 +5,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Sorteos Gratuitos | appazueta.lat</title>
+    <title>Sorteos con Premios | Sorteos Azver</title>
 
-    <meta name="description" content="Participa gratis en nuestros sorteos. Sin pagos, sin tarjetas. Mira videos cortos y gana tu boleto para premios increíbles.">
+    <meta name="description" content="Participa en nuestros sorteos con premios increíbles. Compra tu boleto con tarjeta o pago en OXXO, rápido y seguro.">
 
-        <meta name="theme-color" content="#0a0d18">
+    <meta name="theme-color" content="#0a0d18">
     <meta name="color-scheme" content="dark">
 
     <!-- PWA -->
     <link rel="manifest" href="/manifest.json">
     <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Sorteos">
 
@@ -95,15 +96,15 @@
 
         .hero-badge {
             display: inline-block;
-            background: rgba(16, 185, 129, 0.12);
-            color: #34d399;
+            background: rgba(59, 130, 246, 0.12);
+            color: #60a5fa;
             padding: 8px 18px;
             border-radius: 50px;
             font-size: 13px;
             font-weight: bold;
             letter-spacing: 1px;
             margin-bottom: 20px;
-            border: 1px solid rgba(16, 185, 129, 0.3);
+            border: 1px solid rgba(59, 130, 246, 0.3);
         }
 
         .hero h1 {
@@ -451,13 +452,14 @@
     <div class="topbar-inner">
 
         <a href="/" class="topbar-brand">
-            📰 Noticias del Día Azver
+            🎟️ Sorteos Azver
         </a>
 
         <div class="topbar-links">
-            <a href="/">Inicio</a>
             <a href="/rifas">Sorteos</a>
-            <a href="/comercio">Comercio</a>
+            <a href="/rifas/consultar">Consultar</a>
+            <a href="/ganadores">Ganadores</a>
+            <a href="/faq">FAQ</a>
         </div>
 
     </div>
@@ -471,13 +473,13 @@
 
 <section class="hero">
 
-    <div class="hero-badge">✨ 100% GRATUITO · SIN PAGOS</div>
+    <div class="hero-badge">✨ SORTEOS CON PREMIOS REALES</div>
 
-    <h1>Sorteos Gratuitos</h1>
+    <h1>Sorteos con Premios</h1>
 
     <p class="hero-sub">
-        Participa sin pagar nada. Mira videos cortos,
-        obtén tu boleto y participa por premios increíbles.
+        Compra tu boleto con tarjeta o en efectivo por OXXO.
+        Participa por premios increíbles de forma fácil y segura.
     </p>
 
 </section>
@@ -501,20 +503,20 @@
 
             <div class="paso">
                 <div class="paso-numero">1</div>
-                <h3>🎟️ Reserva tu boleto</h3>
-                <p>Elige un número disponible en el sorteo que más te guste.</p>
+                <h3>🎟️ Elige tu boleto</h3>
+                <p>Selecciona el número de la suerte que más te guste de cualquier sorteo activo.</p>
             </div>
 
             <div class="paso">
                 <div class="paso-numero">2</div>
-                <h3>▶️ Mira 5 videos</h3>
-                <p>Completa 5 videos cortos para acreditar tu boleto. Sin pagar nada.</p>
+                <h3>💳 Paga tu boleto</h3>
+                <p>Paga con tarjeta de crédito/débito o en efectivo en cualquier tienda OXXO.</p>
             </div>
 
             <div class="paso">
                 <div class="paso-numero">3</div>
                 <h3>🎉 ¡Listo!</h3>
-                <p>Guarda tu comprobante y espera la fecha del sorteo.</p>
+                <p>Registra tus datos, guarda tu comprobante y espera la fecha del sorteo.</p>
             </div>
 
         </div>
@@ -530,9 +532,9 @@
 
 <div class="transparencia">
 
-    <strong>🔒 Sin pagos, sin tarjetas, sin suscripciones</strong>
+    <strong>🔒 Pago seguro con Stripe</strong>
 
-    <p>Nuestros sorteos son 100% gratuitos. Nunca te pediremos dinero para participar.</p>
+    <p>Tus datos están protegidos. Recibirás tu comprobante oficial al instante.</p>
 
 </div>
 
@@ -542,7 +544,7 @@
 ============================================= -->
 
 <header>
-    <h1>🎁 Sorteos Gratuitos</h1>
+    <h1>🎁 Sorteos activos</h1>
 </header>
 
 
@@ -550,7 +552,7 @@
 
     <div class="titulo">
         <h2>Participa en nuestros sorteos</h2>
-        <p>Elige un sorteo, mira videos y gana tu boleto.</p>
+        <p>Elige un sorteo, paga tu boleto y participa por grandes premios.</p>
     </div>
 
 
@@ -591,13 +593,13 @@
                                 <span>Boletos</span>
                             </div>
                             <div class="dato">
-                                <strong class="verde">Gratis</strong>
-                                <span>Participación</span>
+                                <strong class="verde">${{ "%.2f"|format(rifa.precio_boleto) }}</strong>
+                                <span>Precio MXN</span>
                             </div>
                         </div>
 
                         <a class="boton" href="/rifas/participar/{{ rifa.id }}">
-                            🎟️ Participar gratis
+                            🎟️ Comprar boleto
                         </a>
 
                     </div>
@@ -628,18 +630,17 @@
 
     <div class="footer-links">
         <a href="/">Inicio</a>
-        <a href="/noticias">Noticias</a>
         <a href="/rifas">Sorteos</a>
-        <a href="/comercio">Comercio</a>
-        <a href="/faq">FAQ</a>
+        <a href="/rifas/consultar">Consultar</a>
         <a href="/ganadores">Ganadores</a>
+        <a href="/faq">FAQ</a>
         <a href="/privacidad">Privacidad</a>
         <a href="/terminos">Términos</a>
         <a href="/contacto">Contacto</a>
     </div>
 
     <div style="opacity:0.6; font-size:13px;">
-        © 2026 appazueta.lat · Todos los derechos reservados
+        © 2026 Sorteos Azver · Todos los derechos reservados
     </div>
 
 </footer>
@@ -788,13 +789,11 @@
         e.preventDefault();
         deferredPrompt = e;
 
-        // Reaparece después de 7 días si el usuario lo cerró
         const cerradoHasta = parseInt(localStorage.getItem('pwa-banner-cerrado') || '0');
         if (cerradoHasta && Date.now() < cerradoHasta) {
             return;
         }
 
-        // Mostrar banner después de 3 segundos
         setTimeout(function() {
             banner.classList.add('activo');
         }, 3000);
@@ -820,13 +819,11 @@
     if (btnCerrarBanner) {
         btnCerrarBanner.addEventListener('click', function() {
             banner.classList.remove('activo');
-            // No molestar por 7 días
             const sieteDias = 7 * 24 * 60 * 60 * 1000;
             localStorage.setItem('pwa-banner-cerrado', String(Date.now() + sieteDias));
         });
     }
 
-    // Detectar cuando ya está instalada
     window.addEventListener('appinstalled', function() {
         console.log('✅ App instalada');
         banner.classList.remove('activo');

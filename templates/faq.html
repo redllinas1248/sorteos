@@ -6,18 +6,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Preguntas Frecuentes | appazueta.lat</title>
+    <title>Preguntas Frecuentes | Sorteos Azver</title>
 
-    <meta name="description" content="Resolvemos las dudas más comunes sobre nuestros sorteos gratuitos: cómo participar, cómo se eligen los ganadores y más.">
+    <meta name="description" content="Resolvemos las dudas más comunes sobre nuestros sorteos: cómo comprar tu boleto, métodos de pago, cómo se eligen los ganadores y más.">
 
     <meta name="theme-color" content="#0a0d18">
     <meta name="color-scheme" content="dark">
 
     <link rel="manifest" href="/manifest.json">
-<link rel="apple-touch-icon" href="/static/icons/icon-192.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Sorteos">
+    <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Sorteos">
 
     <style>
 
@@ -75,14 +76,14 @@
 
         .badge {
             display: inline-block;
-            background: rgba(16, 185, 129, 0.12);
-            color: #34d399;
+            background: rgba(59, 130, 246, 0.12);
+            color: #60a5fa;
             padding: 6px 14px;
             border-radius: 50px;
             font-size: 13px;
             font-weight: bold;
             margin-bottom: 15px;
-            border: 1px solid rgba(16, 185, 129, 0.3);
+            border: 1px solid rgba(59, 130, 246, 0.3);
         }
 
         /* ============================================
@@ -161,7 +162,7 @@
         }
 
         .faq-item.abierto .faq-respuesta {
-            max-height: 500px;
+            max-height: 600px;
             padding: 0 22px 22px;
         }
 
@@ -292,9 +293,9 @@
         <h2>Todo lo que necesitas saber</h2>
 
         <p>
-            Resolvemos las dudas más comunes sobre nuestros
-            sorteos gratuitos. Si no encuentras tu respuesta,
-            puedes <a href="{{ url_for('contacto') }}" style="color:#a5b4fc;">contactarnos</a>.
+            Resolvemos las dudas más comunes sobre nuestros sorteos.
+            Si no encuentras tu respuesta, puedes
+            <a href="{{ url_for('contacto') }}" style="color:#a5b4fc;">contactarnos</a>.
         </p>
 
     </div>
@@ -320,8 +321,8 @@
                 </p>
 
                 <p>
-                    <strong>1.</strong> Elige un sorteo activo y reserva tu número de boleto favorito.<br>
-                    <strong>2.</strong> Mira 5 videos cortos desde tu celular o computadora.<br>
+                    <strong>1.</strong> Elige un sorteo activo y selecciona el número de boleto que más te guste.<br>
+                    <strong>2.</strong> Paga tu boleto con tarjeta de crédito/débito o en efectivo en cualquier tienda OXXO.<br>
                     <strong>3.</strong> Registra tu nombre y listo. Ya estás participando.
                 </p>
 
@@ -343,15 +344,45 @@
             <div class="faq-respuesta">
 
                 <p>
-                    <strong>Nada. Participar es 100% gratuito.</strong>
-                    Nunca te pediremos dinero, tarjetas de crédito
-                    ni datos bancarios para participar en nuestros sorteos.
+                    El precio depende del sorteo. Antes de pagar,
+                    te mostraremos el costo exacto de tu boleto.
                 </p>
 
                 <p>
-                    El único "costo" es ver algunos videos publicitarios
-                    cortos que nos permiten cubrir los gastos del sitio
-                    y los premios.
+                    Puedes pagar con <strong>tarjeta de crédito o débito</strong>,
+                    o en <strong>efectivo en cualquier tienda OXXO</strong>.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="faq-item">
+
+            <button class="faq-pregunta" onclick="toggleFaq(this)">
+
+                ¿Qué métodos de pago aceptan?
+
+                <span class="faq-icono">+</span>
+
+            </button>
+
+            <div class="faq-respuesta">
+
+                <p>
+                    Aceptamos dos métodos:
+                </p>
+
+                <p>
+                    <strong>💳 Tarjeta:</strong> crédito o débito, con pago
+                    inmediato a través de Stripe (procesador de pagos seguro).<br>
+                    <strong>🏪 OXXO:</strong> te generamos un comprobante con
+                    código de barras para que pagues en efectivo en cualquier tienda OXXO.
+                </p>
+
+                <p>
+                    En ambos casos, tus datos están protegidos y encriptados.
                 </p>
 
             </div>
@@ -380,7 +411,7 @@
 
                 <p>
                     El ganador se elige al azar entre todos los
-                    boletos que completaron el proceso de participación.
+                    boletos que hayan completado su pago.
                 </p>
 
             </div>
@@ -421,7 +452,7 @@
 
             <button class="faq-pregunta" onclick="toggleFaq(this)">
 
-                ¿Por qué tengo que ver videos?
+                ¿Cuánto tiempo tengo para pagar mi boleto?
 
                 <span class="faq-icono">+</span>
 
@@ -430,16 +461,15 @@
             <div class="faq-respuesta">
 
                 <p>
-                    Los videos publicitarios son la forma en que
-                    financiamos el sitio y los premios. Google nos
-                    paga una pequeña cantidad por cada video que
-                    alguien ve completo.
+                    Cuando eliges tu boleto, lo reservamos durante
+                    <strong>30 minutos</strong> para que completes el pago
+                    sin prisas.
                 </p>
 
                 <p>
-                    Así podemos mantener los sorteos <strong>gratis
-                    para todos</strong>, sin pedir dinero ni cobrar
-                    boletos.
+                    Si no terminas el pago en ese tiempo, el boleto
+                    se libera automáticamente y vuelve a estar disponible
+                    para otras personas.
                 </p>
 
             </div>
@@ -460,16 +490,16 @@
             <div class="faq-respuesta">
 
                 <p>
-                    Puedes reservar <strong>un boleto por sorteo</strong>
-                    para dar oportunidad a más personas. Si reservas
-                    un boleto y no completas los videos en 1 hora,
-                    el boleto se libera automáticamente para que
-                    otra persona pueda usarlo.
+                    Puedes comprar <strong>un boleto por sorteo</strong>
+                    para dar oportunidad a más personas. Si quieres
+                    participar en varios sorteos al mismo tiempo,
+                    ¡adelante! Cada sorteo es independiente.
                 </p>
 
                 <p>
-                    Si quieres participar en más de un sorteo al
-                    mismo tiempo, ¡adelante! Cada sorteo es independiente.
+                    Si deseas aumentar tus oportunidades en un mismo
+                    sorteo, puedes hacerlo adquiriendo boletos adicionales
+                    en sorteos futuros.
                 </p>
 
             </div>
@@ -481,7 +511,7 @@
 
             <button class="faq-pregunta" onclick="toggleFaq(this)">
 
-                ¿Qué pasa si no completo los 5 videos?
+                ¿Qué pasa si no termino mi pago?
 
                 <span class="faq-icono">+</span>
 
@@ -490,9 +520,9 @@
             <div class="faq-respuesta">
 
                 <p>
-                    Tu boleto se libera automáticamente después de
-                    <strong>1 hora</strong> de inactividad para que
-                    otra persona pueda reservarlo.
+                    Si no completas el pago antes de los 30 minutos,
+                    el boleto se libera automáticamente y vuelve a estar
+                    disponible para otras personas.
                 </p>
 
                 <p>
@@ -521,13 +551,47 @@
                 <p>
                     <strong>No.</strong> No necesitas registrarte ni
                     crear contraseñas. Solo eliges tu boleto,
-                    registras tu nombre al final y guardamos tu
+                    pagas, registras tu nombre al final y guardamos tu
                     participación con un código único.
                 </p>
 
                 <p>
                     Guarda tu código de participación para poder
                     consultar tu boleto más adelante.
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="faq-item">
+
+            <button class="faq-pregunta" onclick="toggleFaq(this)">
+
+                ¿Es seguro pagar en este sitio?
+
+                <span class="faq-icono">+</span>
+
+            </button>
+
+            <div class="faq-respuesta">
+
+                <p>
+                    <strong>Sí, es totalmente seguro.</strong> Los pagos
+                    con tarjeta son procesados por <strong>Stripe</strong>,
+                    uno de los procesadores de pago más confiables del mundo.
+                </p>
+
+                <p>
+                    Nosotros <strong>nunca vemos ni almacenamos</strong>
+                    los datos de tu tarjeta. Stripe se encarga de todo
+                    con encriptación de nivel bancario.
+                </p>
+
+                <p>
+                    Para pagos en OXXO, Stripe también genera el
+                    comprobante y confirma el pago de forma automática.
                 </p>
 
             </div>
@@ -547,8 +611,8 @@
         <h3>¿Listo para participar?</h3>
 
         <p>
-            Elige un sorteo activo y comienza ahora mismo.
-            Sin pagos, sin registros, sin complicaciones.
+            Elige un sorteo activo y compra tu boleto ahora mismo.
+            Pago con tarjeta u OXXO.
         </p>
 
         <a href="{{ url_for('rifas') }}" class="cta-boton">
@@ -563,18 +627,18 @@
 <footer>
 
     <div class="footer-links">
-        <a href="{{ '/' }}">Inicio</a>
+        <a href="/">Inicio</a>
         <a href="{{ url_for('consultar_participacion') }}">Consultar</a>
         <a href="{{ url_for('rifas') }}">Sorteos</a>
         <a href="{{ url_for('faq') }}">FAQ</a>
         <a href="{{ url_for('ganadores') }}">Ganadores</a>
-        <a href="{{ url_for('privacidad') }}">Aviso de privacidad</a>
-        <a href="{{ url_for('terminos') }}">Términos y condiciones</a>
+        <a href="{{ url_for('privacidad') }}">Privacidad</a>
+        <a href="{{ url_for('terminos') }}">Términos</a>
         <a href="{{ url_for('contacto') }}">Contacto</a>
     </div>
 
     <div style="opacity:0.6; font-size:13px;">
-        © 2026 appazueta.lat · Todos los derechos reservados
+        © 2026 Sorteos Azver · Todos los derechos reservados
     </div>
 
 </footer>
@@ -586,7 +650,6 @@
 
         const item = boton.parentElement;
 
-        // Cerrar otros abiertos (opcional, tipo acordeón)
         const itemsAbiertos = document.querySelectorAll('.faq-item.abierto');
 
         itemsAbiertos.forEach(function(abierto) {
@@ -595,7 +658,6 @@
             }
         });
 
-        // Alternar el actual
         item.classList.toggle('abierto');
 
     }

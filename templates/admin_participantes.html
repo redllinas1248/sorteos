@@ -227,6 +227,23 @@
             font-size: 13px;
         }
 
+        .metodo-pago {
+            display: inline-block;
+            background: rgba(96, 165, 250, 0.15);
+            color: #60a5fa;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .monto {
+            color: #34d399;
+            font-weight: bold;
+            font-size: 13px;
+        }
+
         .fecha {
             white-space: nowrap;
             color: #8a93ab;
@@ -248,9 +265,9 @@
             color: #60a5fa;
         }
 
-        .estado.acreditado {
-            background: rgba(245, 158, 11, 0.15);
-            color: #fbbf24;
+        .estado.pagado {
+            background: rgba(139, 92, 246, 0.15);
+            color: #a78bfa;
         }
 
         .estado.asignado {
@@ -343,25 +360,21 @@
 
         <h1>👥 Participantes</h1>
 
-        
-
         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
 
-    <a href="{{ url_for('admin_tickets', rifa_id=rifa.id) }}"
-       class="boton"
-       style="background: linear-gradient(135deg, #10b981, #059669); color: white;">
-        🎫 Imprimir tickets
-    </a>
+            <a href="{{ url_for('admin_tickets', rifa_id=rifa.id) }}"
+               class="boton"
+               style="background: linear-gradient(135deg, #10b981, #059669); color: white;">
+                🎫 Imprimir tickets
+            </a>
 
-    <a href="{{ url_for('admin_rifas') }}" class="boton boton-volver">
-        ← Volver al panel
-    </a>
+            <a href="{{ url_for('admin_rifas') }}" class="boton boton-volver">
+                ← Volver al panel
+            </a>
 
-    <a href="{{ url_for('admin_logout') }}" class="boton boton-cerrar">
-        Cerrar Sesión
-    </a>
-
-</div>
+            <a href="{{ url_for('admin_logout') }}" class="boton boton-cerrar">
+                Cerrar Sesión
+            </a>
 
         </div>
 
@@ -487,11 +500,11 @@
 
         <div class="stat-card">
 
-            <h3>Acreditados</h3>
+            <h3>Pagados</h3>
 
             <div class="numero violeta">
 
-                {{ stats.acreditados }}
+                {{ stats.pagados }}
 
             </div>
 
@@ -534,7 +547,9 @@
 
                         <th>Estado</th>
 
-                        <th>Fecha de asignación</th>
+                        <th>Pago</th>
+
+                        <th>Fecha</th>
 
                     </tr>
 
@@ -610,57 +625,84 @@
 
                             </td>
 
+                            <td>
+
+                                {% if p.metodo_pago %}
+
+                                    <span class="metodo-pago">{{ p.metodo_pago }}</span>
+
+                                    <br>
+
+                                    {% if p.monto_pagado %}
+
+                                        <span class="monto">${{ "%.2f"|format(p.monto_pagado) }}</span>
+
+                                    {% endif %}
+
+                                {% else %}
+
+                                    <span class="sin-especial">—</span>
+
+                                {% endif %}
+
+                            </td>
+
                             <td class="fecha">
 
-    {% if p.asignado_en %}
+                                {% if p.asignado_en %}
 
-        {{ (p.asignado_en | mx).strftime('%d/%m/%Y %H:%M') }}
+                                    {{ (p.asignado_en | mx).strftime('%d/%m/%Y %H:%M') }}
 
-    {% elif p.reservado_en %}
+                                {% elif p.pagado_en %}
 
-        Reservado:
-        {{ (p.reservado_en | mx).strftime('%d/%m/%Y %H:%M') }}
+                                    Pagado:
+                                    {{ (p.pagado_en | mx).strftime('%d/%m/%Y %H:%M') }}
 
-    {% else %}
+                                {% elif p.reservado_en %}
 
-        —
+                                    Reservado:
+                                    {{ (p.reservado_en | mx).strftime('%d/%m/%Y %H:%M') }}
 
-    {% endif %}
+                                {% else %}
+
+                                    —
+
+                                {% endif %}
 
 
-    {# Botón para liberar si no está asignado #}
+                                {# Botón para liberar si no está asignado #}
 
-    {% if p.estado in ('reservado', 'acreditado') %}
+                                {% if p.estado in ('reservado', 'pagado') %}
 
-        <form
-            method="POST"
-            action="{{ url_for(
-                'admin_liberar_boleto',
-                boleto_id=p.id
-            ) }}"
-            onsubmit="return confirm('¿Liberar el boleto #{{ p.numero }}? El usuario perderá su progreso y el boleto volverá a estar disponible.');"
-            style="margin-top: 6px;"
-        >
+                                    <form
+                                        method="POST"
+                                        action="{{ url_for(
+                                            'admin_liberar_boleto',
+                                            boleto_id=p.id
+                                        ) }}"
+                                        onsubmit="return confirm('¿Liberar el boleto #{{ p.numero }}? El boleto volverá a estar disponible y se perderá el pago registrado.');"
+                                        style="margin-top: 6px;"
+                                    >
 
-            <button
-                type="submit"
-                class="boton"
-                style="
-                    background: rgba(239, 68, 68, 0.15);
-                    color: #fca5a5;
-                    border: 1px solid rgba(239, 68, 68, 0.3);
-                    padding: 6px 10px;
-                    font-size: 12px;
-                "
-            >
-                🔓 Liberar
-            </button>
+                                        <button
+                                            type="submit"
+                                            class="boton"
+                                            style="
+                                                background: rgba(239, 68, 68, 0.15);
+                                                color: #fca5a5;
+                                                border: 1px solid rgba(239, 68, 68, 0.3);
+                                                padding: 6px 10px;
+                                                font-size: 12px;
+                                            "
+                                        >
+                                            🔓 Liberar
+                                        </button>
 
-        </form>
+                                    </form>
 
-    {% endif %}
+                                {% endif %}
 
-</td>
+                            </td>
 
                         </tr>
 
@@ -678,11 +720,11 @@
 
             <br>
 
-            · Los boletos <strong>reservados</strong> son usuarios que aún no completan los 5 videos.
+            · Los boletos <strong>reservados</strong> son usuarios que aún no han completado el pago.
 
             <br>
 
-            · Los boletos <strong>acreditados</strong> completaron los videos pero no han dado sus datos.
+            · Los boletos <strong>pagados</strong> ya tienen el pago confirmado pero no han dado sus datos.
 
             <br>
 

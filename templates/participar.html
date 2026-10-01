@@ -5,16 +5,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Participar gratis | {{ rifa.titulo }}</title>
+    <title>Comprar boleto | {{ rifa.titulo }}</title>
 
     <meta name="theme-color" content="#0a0d18">
     <meta name="color-scheme" content="dark">
 
     <link rel="manifest" href="/manifest.json">
-<link rel="apple-touch-icon" href="/static/icons/icon-192.png">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Sorteos">
+    <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Sorteos">
 
     <style>
 
@@ -88,13 +89,13 @@
             line-height: 1.6;
         }
 
-        .badge-gratis {
+        .badge-precio {
             display: inline-block;
             background: rgba(16, 185, 129, 0.12);
             color: #34d399;
             padding: 6px 14px;
             border-radius: 50px;
-            font-size: 13px;
+            font-size: 15px;
             font-weight: bold;
             margin-top: 10px;
             border: 1px solid rgba(16, 185, 129, 0.3);
@@ -214,10 +215,10 @@
             color: #8a93ab;
         }
 
-        .aviso-gratis {
-            background: rgba(16, 185, 129, 0.08);
-            border: 1px solid rgba(16, 185, 129, 0.25);
-            color: #34d399;
+        .aviso-pago {
+            background: rgba(59, 130, 246, 0.08);
+            border: 1px solid rgba(59, 130, 246, 0.25);
+            color: #93c5fd;
             padding: 15px;
             border-radius: 12px;
             text-align: center;
@@ -226,7 +227,7 @@
             line-height: 1.5;
         }
 
-        .aviso-gratis strong { color: #10b981; }
+        .aviso-pago strong { color: #60a5fa; }
 
         @media (max-width: 700px) {
             .rifa-info { grid-template-columns: 1fr; }
@@ -246,8 +247,8 @@
 <body>
 
 <div class="header">
-    <h1>🎁 Participar gratis</h1>
-    <p>Selecciona tu boleto</p>
+    <h1>🎟️ Comprar boleto</h1>
+    <p>Selecciona tu número de la suerte</p>
 </div>
 
 
@@ -286,7 +287,9 @@
                     <div class="descripcion">{{ rifa.descripcion }}</div>
                 {% endif %}
 
-                <div class="badge-gratis">✨ Participación gratuita</div>
+                <div class="badge-precio">
+                    💰 ${{ "%.2f"|format(rifa.precio_boleto) }} MXN por boleto
+                </div>
             </div>
 
         </div>
@@ -322,10 +325,10 @@
 
             </form>
 
-            <div class="aviso-gratis">
-                🔒 <strong>Tu boleto se reserva por 1 hora.</strong><br>
-                Si no completas el proceso a tiempo, el boleto vuelve a estar disponible.<br>
-                <strong>Sin pagos, sin tarjetas.</strong>
+            <div class="aviso-pago">
+                ⏱️ <strong>Tu boleto se reserva por {{ 30 }} minutos.</strong><br>
+                Debes completar el pago dentro de ese tiempo para conservarlo.<br>
+                <strong>Acepta tarjeta y OXXO.</strong>
             </div>
 
         {% else %}

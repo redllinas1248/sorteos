@@ -11,6 +11,13 @@
     <meta name="theme-color" content="#0a0d18">
     <meta name="color-scheme" content="dark">
 
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/static/icons/icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Sorteos">
+
     <style>
 
         * { box-sizing: border-box; }
@@ -276,8 +283,8 @@
     </div>
 
 
-    <a class="volver" href="{{ url_for('pago', reserva_token=boleto.reserva_token) }}">
-        ← Volver a mi progreso
+    <a class="volver" href="/rifas">
+        ← Volver a los sorteos
     </a>
 
 </div>
