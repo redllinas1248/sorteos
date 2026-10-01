@@ -531,7 +531,7 @@ def iniciar_pago(reserva_token):
                 url_for("pago", reserva_token=reserva_token)
             )
 
-        # Método de pago
+        # Método de pago (solo para registro interno)
         metodo = request.form.get("metodo", "card")
 
         if metodo not in ("card", "oxxo"):
@@ -542,9 +542,14 @@ def iniciar_pago(reserva_token):
         base_url = request.url_root.rstrip("/")
 
         # Crear sesión de Stripe
+        #
+        # IMPORTANTE:
+        # Ya NO se pasa payment_method_types porque Stripe
+        # cambió su API. Ahora los métodos de pago (tarjeta,
+        # OXXO, etc.) se configuran desde el Dashboard:
+        # https://dashboard.stripe.com/settings/payment_methods
+        #
         checkout_session = stripe.checkout.Session.create(
-
-            payment_method_types=[metodo],
 
             line_items=[{
                 "price_data": {
@@ -569,6 +574,7 @@ def iniciar_pago(reserva_token):
             metadata={
                 "boleto_id": str(boleto["id"]),
                 "reserva_token": reserva_token,
+                "metodo_preferido": metodo,
             },
         )
 
@@ -604,7 +610,6 @@ def iniciar_pago(reserva_token):
     finally:
 
         db.close()
-
 
 # ============================================================
 # PAGO EXITOSO (redirect de Stripe después del pago)
