@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Usuarios admin</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: Arial, sans-serif; background: #0a0d18; color: #e8ecf4; }
+        header { background: #141827; border-bottom: 1px solid #232942; padding: 20px; }
+        header .contenedor { max-width: 1200px; margin: auto; display: flex; justify-content: space-between; align-items: center; gap: 15px; flex-wrap: wrap; }
+        header h1 { margin: 0; font-size: 22px; }
+        main { max-width: 1200px; margin: 30px auto; padding: 20px; }
+        .encabezado { display: flex; justify-content: space-between; align-items: center; gap: 20px; margin-bottom: 25px; flex-wrap: wrap; }
+        .encabezado h2 { margin: 0; }
+        .boton { display: inline-block; padding: 11px 16px; border: none; border-radius: 9px; text-decoration: none; font-weight: bold; cursor: pointer; font-size: 14px; transition: 0.2s; color: white; }
+        .boton-nuevo { background: linear-gradient(135deg, #3b82f6, #8b5cf6); }
+        .boton-volver { background: #1e293b; border: 1px solid #232942; color: #e8ecf4; }
+        .boton-cerrar { background: #4b5563; }
+        .boton-toggle { background: #f59e0b; }
+        .boton-toggle.activar { background: #10b981; }
+        .boton-eliminar { background: #dc2626; }
+        .tabla-contenedor { background: #141827; border: 1px solid #232942; border-radius: 15px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 800px; }
+        th, td { padding: 14px; text-align: left; border-bottom: 1px solid #232942; vertical-align: middle; }
+        th { background: #0a0d18; font-size: 12px; color: #8a93ab; text-transform: uppercase; letter-spacing: 0.5px; }
+        td { font-size: 14px; }
+        .username { font-weight: bold; color: #a5b4fc; font-family: 'Courier New', monospace; }
+        .nombre { color: #e8ecf4; }
+        .slug { display: inline-block; background: rgba(139, 92, 246, 0.15); color: #a78bfa; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; font-family: 'Courier New', monospace; }
+        .estado-activo { display: inline-block; background: rgba(16, 185, 129, 0.15); color: #34d399; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; }
+        .estado-inactivo { display: inline-block; background: rgba(239, 68, 68, 0.15); color: #fca5a5; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; }
+        .fecha { white-space: nowrap; color: #8a93ab; font-size: 13px; }
+        .flash { padding: 14px 18px; border-radius: 10px; margin-bottom: 20px; font-weight: bold; }
+        .flash.success { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+        .flash.error { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .acciones { display: flex; flex-wrap: wrap; gap: 7px; }
+        .acciones form { margin: 0; }
+        .vacio { text-align: center; padding: 60px 20px; color: #8a93ab; }
+        .vacio h2 { color: #e8ecf4; }
+        .info-box { background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 12px; padding: 15px; margin-bottom: 25px; font-size: 14px; color: #93c5fd; line-height: 1.5; }
+        .info-box strong { color: #60a5fa; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="contenedor">
+        <h1>👥 Usuarios Admin</h1>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <a href="/rifas/admin" class="boton boton-volver">← Panel principal</a>
+            <a href="{{ url_for('admin_logout') }}" class="boton boton-cerrar">Cerrar Sesión</a>
+        </div>
+    </div>
+</header>
+
+<main>
+
+    {% with mensajes = get_flashed_messages(with_categories=true) %}
+        {% if mensajes %}
+            {% for categoria, mensaje in mensajes %}
+                <div class="flash {{ categoria }}">{{ mensaje }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="info-box">
+        <strong>ℹ️ ¿Cómo funciona?</strong><br>
+        Crea un usuario para cada persona que quiera ver las estadísticas de sus propias rifas.<br>
+        • El <strong>usuario</strong> y <strong>contraseña</strong> son sus credenciales de acceso.<br>
+        • El <strong>slug del propietario</strong> es el identificador único (ej: <code>maria</code>, <code>hermana</code>, <code>amigo1</code>). Lo usarás al crear una rifa para asignarla a esa persona.
+    </div>
+
+    <div class="encabezado">
+        <h2>Usuarios restringidos</h2>
+        <a href="{{ url_for('nuevo_admin') }}" class="boton boton-nuevo">+ NUEVO USUARIO</a>
+    </div>
+
+    {% if usuarios %}
+
+        <div class="tabla-contenedor">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Usuario</th>
+                        <th>Nombre</th>
+                        <th>Slug propietario</th>
+                        <th>Estado</th>
+                        <th>Creado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in usuarios %}
+                        <tr>
+                            <td><span class="username">{{ u.username }}</span></td>
+                            <td><span class="nombre">{{ u.nombre }}</span></td>
+                            <td><span class="slug">{{ u.propietario_slug }}</span></td>
+                            <td>
+                                {% if u.activo %}
+                                    <span class="estado-activo">✓ Activo</span>
+                                {% else %}
+                                    <span class="estado-inactivo">✗ Inactivo</span>
+                                {% endif %}
+                            </td>
+                            <td class="fecha">
+                                {{ (u.creado_en | mx).strftime('%d/%m/%Y') if u.creado_en else '—' }}
+                            </td>
+                            <td>
+                                <div class="acciones">
+                                    <form method="POST" action="{{ url_for('toggle_admin', admin_id=u.id) }}">
+                                        <button type="submit" class="boton boton-toggle {% if not u.activo %}activar{% endif %}">
+                                            {% if u.activo %}⏸️ Desactivar{% else %}▶️ Activar{% endif %}
+                                        </button>
+                                    </form>
+                                    <form method="POST" action="{{ url_for('eliminar_admin', admin_id=u.id) }}" onsubmit="return confirm('¿Eliminar el usuario {{ u.username }}?');">
+                                        <button type="submit" class="boton boton-eliminar">🗑️</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    {% else %}
+
+        <div class="tabla-contenedor">
+            <div class="vacio">
+                <h2>👥 No hay usuarios todavía</h2>
+                <p>Crea el primero para que tus amigos vean sus estadísticas.</p>
+                <br>
+                <a href="{{ url_for('nuevo_admin') }}" class="boton boton-nuevo">+ Crear primer usuario</a>
+            </div>
+        </div>
+
+    {% endif %}
+
+</main>
+
+</body>
+</html>

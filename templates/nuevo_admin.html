@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nuevo usuario admin</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: Arial, sans-serif; background: #0a0d18; color: #e8ecf4; }
+        header { background: #141827; border-bottom: 1px solid #232942; padding: 20px; }
+        header .contenedor { max-width: 700px; margin: auto; display: flex; justify-content: space-between; align-items: center; gap: 15px; flex-wrap: wrap; }
+        header h1 { margin: 0; font-size: 22px; }
+        main { max-width: 700px; margin: 30px auto; padding: 20px; }
+        .formulario { background: #141827; border: 1px solid #232942; border-radius: 16px; padding: 30px; }
+        .campo { margin-bottom: 22px; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; font-size: 14px; }
+        input { width: 100%; padding: 13px; background: #0a0d18; border: 1px solid #232942; border-radius: 10px; font-size: 15px; font-family: inherit; color: #e8ecf4; transition: 0.2s; }
+        input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2); }
+        .ayuda { display: block; color: #8a93ab; font-size: 12px; margin-top: 6px; line-height: 1.5; }
+        .boton { border: none; padding: 13px 22px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 15px; text-decoration: none; display: inline-flex; justify-content: center; align-items: center; font-family: inherit; transition: 0.2s; color: white; }
+        .guardar { background: linear-gradient(135deg, #3b82f6, #8b5cf6); }
+        .guardar:hover { transform: translateY(-1px); box-shadow: 0 8px 24px rgba(139, 92, 246, 0.4); }
+        .cancelar { background: #1e293b; border: 1px solid #232942; color: #e8ecf4; }
+        .cancelar:hover { background: #232942; }
+        .acciones { display: flex; gap: 12px; margin-top: 30px; flex-wrap: wrap; }
+        .flash { padding: 14px 18px; border-radius: 10px; margin-bottom: 20px; font-weight: bold; }
+        .flash.error { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="contenedor">
+        <h1>👤 Nuevo usuario</h1>
+        <a href="{{ url_for('admin_usuarios') }}" class="boton cancelar">← Volver</a>
+    </div>
+</header>
+
+<main>
+
+    {% with mensajes = get_flashed_messages(with_categories=true) %}
+        {% if mensajes %}
+            {% for categoria, mensaje in mensajes %}
+                <div class="flash {{ categoria }}">{{ mensaje }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="formulario">
+
+        <form method="POST" action="{{ url_for('crear_admin') }}">
+
+            <div class="campo">
+                <label for="username">Usuario *</label>
+                <input
+                    type="text"
+                    id="username"
+                    name="username"
+                    maxlength="50"
+                    minlength="3"
+                    required
+                    placeholder="Ej: maria"
+                    autocomplete="off"
+                >
+                <span class="ayuda">Será con lo que la persona inicie sesión. Solo letras, números, guiones y guiones bajos.</span>
+            </div>
+
+            <div class="campo">
+                <label for="password">Contraseña *</label>
+                <input
+                    type="text"
+                    id="password"
+                    name="password"
+                    minlength="6"
+                    required
+                    placeholder="Mínimo 6 caracteres"
+                >
+                <span class="ayuda">Se muestra en texto plano porque tú la vas a compartir con la persona. Se guarda encriptada.</span>
+            </div>
+
+            <div class="campo">
+                <label for="nombre">Nombre completo *</label>
+                <input
+                    type="text"
+                    id="nombre"
+                    name="nombre"
+                    maxlength="200"
+                    required
+                    placeholder="Ej: María González"
+                >
+                <span class="ayuda">Aparecerá en el panel cuando el usuario se loguee.</span>
+            </div>
+
+            <div class="campo">
+                <label for="propietario_slug">Slug del propietario *</label>
+                <input
+                    type="text"
+                    id="propietario_slug"
+                    name="propietario_slug"
+                    maxlength="50"
+                    required
+                    placeholder="Ej: maria"
+                >
+                <span class="ayuda">
+                    Este slug lo usarás al crear una rifa para asignarla a este usuario.<br>
+                    Ejemplo: si pones <code>maria</code>, cuando crees una rifa y la asignes a <code>maria</code>, esta persona la verá en su panel.
+                </span>
+            </div>
+
+            <div class="acciones">
+                <button type="submit" class="boton guardar">
+                    ✅ Crear usuario
+                </button>
+                <a href="{{ url_for('admin_usuarios') }}" class="boton cancelar">
+                    Cancelar
+                </a>
+            </div>
+
+        </form>
+
+    </div>
+
+</main>
+
+</body>
+</html>

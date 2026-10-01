@@ -62,10 +62,10 @@
 <body>
 
 <header>
-    <div class="contenedor">
-        <h1>🎁 Administración de Sorteos</h1>
-        <a href="{{ url_for('admin_logout') }}" class="boton boton-salir">Cerrar Sesión</a>
-    </div>
+    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+    <a href="{{ url_for('admin_usuarios') }}" class="boton" style="background: #8b5cf6; color: white;">👥 Usuarios</a>
+    <a href="{{ url_for('admin_logout') }}" class="boton boton-salir">Cerrar Sesión</a>
+</div>
 </header>
 
 <main>

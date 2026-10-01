@@ -1,6 +1,6 @@
 import os
 import secrets
-
+from werkzeug.security import generate_password_hash
 from datetime import (
     datetime,
     timedelta,
@@ -2132,6 +2132,249 @@ def clonar_rifa(rifa_id):
     finally:
 
         db.close()
+
+# ============================================================
+# ADMIN: GESTIÓN DE USUARIOS RESTRINGIDOS
+# Solo el super admin puede crear/editar usuarios para
+# que vean las estadísticas de sus propias rifas.
+# ============================================================
+
+@app.route("/rifas/admin/admins")
+@admin_required
+def admin_usuarios():
+
+    db = get_db()
+
+    try:
+
+        cursor = db.cursor()
+
+        cursor.execute("""
+            SELECT
+                id,
+                username,
+                nombre,
+                propietario_slug,
+                activo,
+                ultimo_acceso,
+                creado_en
+            FROM sp_admins
+            ORDER BY creado_en DESC
+        """)
+
+        usuarios = cursor.fetchall()
+
+        return render_template(
+            "admin_usuarios.html",
+            usuarios=usuarios
+        )
+
+    finally:
+
+        db.close()
+
+
+@app.route("/rifas/admin/admins/nuevo")
+@admin_required
+def nuevo_admin():
+    return render_template("nuevo_admin.html")
+
+
+@app.route("/rifas/admin/admins/nuevo", methods=["POST"])
+@admin_required
+def crear_admin():
+
+    username = request.form.get("username", "").strip().lower()
+    password = request.form.get("password", "").strip()
+    nombre = request.form.get("nombre", "").strip()
+    propietario_slug = request.form.get("propietario_slug", "").strip().lower()
+
+    # Validaciones
+    if not username or not password or not nombre or not propietario_slug:
+        flash("Todos los campos son obligatorios.", "error")
+        return redirect(url_for("nuevo_admin"))
+
+    if len(username) < 3 or len(username) > 50:
+        flash("El usuario debe tener entre 3 y 50 caracteres.", "error")
+        return redirect(url_for("nuevo_admin"))
+
+    if len(password) < 6:
+        flash("La contraseña debe tener al menos 6 caracteres.", "error")
+        return redirect(url_for("nuevo_admin"))
+
+    if not username.replace("-", "").replace("_", "").isalnum():
+        flash("El usuario solo puede tener letras, números, guiones y guiones bajos.", "error")
+        return redirect(url_for("nuevo_admin"))
+
+    if not propietario_slug.replace("-", "").replace("_", "").isalnum():
+        flash("El slug del propietario solo puede tener letras, números, guiones y guiones bajos.", "error")
+        return redirect(url_for("nuevo_admin"))
+
+    db = get_db()
+
+    try:
+
+        cursor = db.cursor()
+
+        # Verificar que el username no exista
+        cursor.execute(
+            "SELECT id FROM sp_admins WHERE username = %s",
+            (username,)
+        )
+
+        if cursor.fetchone():
+            flash("Ese nombre de usuario ya existe.", "error")
+            return redirect(url_for("nuevo_admin"))
+
+        # Verificar que el slug no exista
+        cursor.execute(
+            "SELECT id FROM sp_admins WHERE propietario_slug = %s",
+            (propietario_slug,)
+        )
+
+        if cursor.fetchone():
+            flash("Ya existe un usuario con ese slug de propietario.", "error")
+            return redirect(url_for("nuevo_admin"))
+
+        # Hashear el password
+        password_hash = generate_password_hash(password)
+
+        cursor.execute("""
+            INSERT INTO sp_admins (
+                username,
+                password_hash,
+                nombre,
+                propietario_slug,
+                activo
+            )
+            VALUES (%s, %s, %s, %s, TRUE)
+        """, (
+            username,
+            password_hash,
+            nombre,
+            propietario_slug
+        ))
+
+        db.commit()
+
+        flash(
+            f"Usuario '{username}' creado correctamente.",
+            "success"
+        )
+
+        return redirect(url_for("admin_usuarios"))
+
+    except Exception as error:
+
+        db.rollback()
+
+        print("ERROR AL CREAR ADMIN:", error)
+
+        flash("Ocurrió un error al crear el usuario.", "error")
+
+        return redirect(url_for("nuevo_admin"))
+
+    finally:
+
+        db.close()
+
+
+@app.route("/rifas/admin/admins/toggle/<int:admin_id>", methods=["POST"])
+@admin_required
+def toggle_admin(admin_id):
+
+    db = get_db()
+
+    try:
+
+        cursor = db.cursor()
+
+        cursor.execute("""
+            UPDATE sp_admins
+            SET activo = NOT activo
+            WHERE id = %s
+            RETURNING activo, username
+        """, (admin_id,))
+
+        resultado = cursor.fetchone()
+
+        if resultado:
+
+            db.commit()
+
+            estado = "activado" if resultado["activo"] else "desactivado"
+
+            flash(
+                f"Usuario '{resultado['username']}' {estado}.",
+                "success"
+            )
+
+        else:
+
+            db.rollback()
+
+            flash("Usuario no encontrado.", "error")
+
+    except Exception as error:
+
+        db.rollback()
+
+        print("ERROR AL TOGGLE ADMIN:", error)
+
+        flash("Ocurrió un error.", "error")
+
+    finally:
+
+        db.close()
+
+    return redirect(url_for("admin_usuarios"))
+
+
+@app.route("/rifas/admin/admins/eliminar/<int:admin_id>", methods=["POST"])
+@admin_required
+def eliminar_admin(admin_id):
+
+    db = get_db()
+
+    try:
+
+        cursor = db.cursor()
+
+        cursor.execute(
+            "DELETE FROM sp_admins WHERE id = %s RETURNING username",
+            (admin_id,)
+        )
+
+        resultado = cursor.fetchone()
+
+        if resultado:
+
+            db.commit()
+
+            flash(
+                f"Usuario '{resultado['username']}' eliminado.",
+                "success"
+            )
+
+        else:
+
+            db.rollback()
+
+            flash("Usuario no encontrado.", "error")
+
+    except Exception as error:
+
+        db.rollback()
+
+        print("ERROR AL ELIMINAR ADMIN:", error)
+
+        flash("Ocurrió un error al eliminar el usuario.", "error")
+
+    finally:
+
+        db.close()
+
+    return redirect(url_for("admin_usuarios"))
 
 # ============================================================
 # EJECUCIÓN LOCAL
