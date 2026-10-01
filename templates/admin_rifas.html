@@ -82,30 +82,72 @@
     <!-- ==========================================
          PANEL DE ESTADÍSTICAS
          ========================================== -->
+    <!-- ==========================================
+         BLOQUE 1: SORTEOS ACTIVOS
+         ========================================== -->
+
+    <h2 style="margin: 0 0 15px; font-size: 18px; color: #34d399;">
+        🟢 Sorteos en curso
+    </h2>
+
     <div class="stats-grid">
         <div class="stat-card">
             <h3>Sorteos Activos</h3>
-            <div class="numero verde">{{ stats_rifas.get('activa', 0) }}</div>
+            <div class="numero verde">{{ stats_rifas_activos.get('activa', 0) }}</div>
         </div>
         <div class="stat-card">
             <h3>Sorteos Pausados</h3>
-            <div class="numero amarillo">{{ stats_rifas.get('pausada', 0) }}</div>
+            <div class="numero amarillo">{{ stats_rifas_activos.get('pausada', 0) }}</div>
+        </div>
+        <div class="stat-card">
+            <h3>Borradores</h3>
+            <div class="numero">{{ stats_rifas_activos.get('borrador', 0) }}</div>
         </div>
         <div class="stat-card">
             <h3>Boletos Reservados</h3>
-            <div class="numero azul">{{ stats_boletos.get('reservado', 0) }}</div>
+            <div class="numero azul">{{ stats_boletos_activos.get('reservado', 0) }}</div>
         </div>
         <div class="stat-card">
             <h3>Boletos Pagados</h3>
-            <div class="numero violeta">{{ stats_boletos.get('pagado', 0) }}</div>
+            <div class="numero violeta">{{ stats_boletos_activos.get('pagado', 0) }}</div>
         </div>
         <div class="stat-card">
             <h3>Boletos Asignados</h3>
-            <div class="numero verde">{{ stats_boletos.get('asignado', 0) }}</div>
+            <div class="numero verde">{{ stats_boletos_activos.get('asignado', 0) }}</div>
         </div>
         <div class="stat-card">
             <h3>Boletos Disponibles</h3>
-            <div class="numero">{{ stats_boletos.get('disponible', 0) }}</div>
+            <div class="numero">{{ stats_boletos_activos.get('disponible', 0) }}</div>
+        </div>
+    </div>
+
+
+    <!-- ==========================================
+         BLOQUE 2: HISTÓRICO (sorteos cerrados)
+         ========================================== -->
+
+    <h2 style="margin: 40px 0 15px; font-size: 18px; color: #8a93ab;">
+        📚 Histórico (sorteos cerrados)
+    </h2>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h3>Sorteos Finalizados</h3>
+            <div class="numero">{{ stats_rifas_historicos.get('finalizada', 0) }}</div>
+        </div>
+        <div class="stat-card">
+            <h3>Sorteos Cancelados</h3>
+            <div class="numero rojo">{{ stats_rifas_historicos.get('cancelada', 0) }}</div>
+        </div>
+        <div class="stat-card">
+            <h3>Boletos Vendidos</h3>
+            <div class="numero verde">{{ stats_historicos.vendidos }}</div>
+        </div>
+        <div class="stat-card">
+            <h3>Ingresos Totales</h3>
+            <div class="numero verde">
+                ${{ "%.2f"|format(stats_historicos.ingresos) }}
+            </div>
         </div>
     </div>
 

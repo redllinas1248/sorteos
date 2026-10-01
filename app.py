@@ -1224,27 +1224,69 @@ def admin_rifas():
 
         cursor = db.cursor()
 
+        # ====================================================
+        # BLOQUE 1: ESTADÍSTICAS DE SORTEOS ACTIVOS
+        # (activa + pausada + borrador)
+        # ====================================================
+
         cursor.execute("""
             SELECT estado, COUNT(*) AS total
             FROM sp_rifas
+            WHERE estado IN ('borrador', 'activa', 'pausada')
             GROUP BY estado
         """)
 
-        stats_rifas = {
+        stats_rifas_activos = {
             fila["estado"]: fila["total"]
             for fila in cursor.fetchall()
         }
 
         cursor.execute("""
-            SELECT estado, COUNT(*) AS total
-            FROM sp_boletos
-            GROUP BY estado
+            SELECT b.estado, COUNT(*) AS total
+            FROM sp_boletos b
+            INNER JOIN sp_rifas r ON r.id = b.rifa_id
+            WHERE r.estado IN ('activa', 'pausada')
+            GROUP BY b.estado
         """)
 
-        stats_boletos = {
+        stats_boletos_activos = {
             fila["estado"]: fila["total"]
             for fila in cursor.fetchall()
         }
+
+        # ====================================================
+        # BLOQUE 2: ESTADÍSTICAS HISTÓRICAS
+        # (finalizada + cancelada)
+        # ====================================================
+
+        cursor.execute("""
+            SELECT estado, COUNT(*) AS total
+            FROM sp_rifas
+            WHERE estado IN ('finalizada', 'cancelada')
+            GROUP BY estado
+        """)
+
+        stats_rifas_historicos = {
+            fila["estado"]: fila["total"]
+            for fila in cursor.fetchall()
+        }
+
+        cursor.execute("""
+            SELECT
+                COUNT(*) FILTER (
+                    WHERE b.estado IN ('asignado', 'pagado')
+                ) AS vendidos,
+                COALESCE(SUM(b.monto_pagado), 0) AS ingresos
+            FROM sp_boletos b
+            INNER JOIN sp_rifas r ON r.id = b.rifa_id
+            WHERE r.estado IN ('finalizada', 'cancelada')
+        """)
+
+        stats_historicos = cursor.fetchone()
+
+        # ====================================================
+        # STATS POR RIFA (solo de sorteos no históricos)
+        # ====================================================
 
         cursor.execute("""
             SELECT
@@ -1255,6 +1297,7 @@ def admin_rifas():
                 COUNT(CASE WHEN b.estado = 'asignado' THEN 1 END) AS asignados
             FROM sp_rifas r
             LEFT JOIN sp_boletos b ON b.rifa_id = r.id
+            WHERE r.estado IN ('borrador', 'activa', 'pausada')
             GROUP BY r.id
         """)
 
@@ -1267,6 +1310,10 @@ def admin_rifas():
             }
             for fila in cursor.fetchall()
         }
+
+        # ====================================================
+        # LISTADO DE RIFAS
+        # ====================================================
 
         cursor.execute("""
             SELECT
@@ -1283,8 +1330,10 @@ def admin_rifas():
         return render_template(
             "admin_rifas.html",
             rifas=rifas,
-            stats_rifas=stats_rifas,
-            stats_boletos=stats_boletos,
+            stats_rifas_activos=stats_rifas_activos,
+            stats_boletos_activos=stats_boletos_activos,
+            stats_rifas_historicos=stats_rifas_historicos,
+            stats_historicos=stats_historicos,
             stats_por_rifa=stats_por_rifa
         )
 
