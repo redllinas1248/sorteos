@@ -1955,6 +1955,136 @@ def cancelar_rifa(rifa_id):
 
 
 # ============================================================
+# CLONAR / REUTILIZAR RIFA
+#
+# Crea una copia de una rifa existente con los mismos datos
+# (título, descripción, imagen, precio, cantidad de boletos)
+# pero en estado "borrador" y con fechas vacías.
+#
+# Todos los boletos nuevos se crean como "disponible".
+# ============================================================
+
+@app.route("/rifas/admin/clonar/<int:rifa_id>", methods=["POST"])
+@admin_required
+def clonar_rifa(rifa_id):
+
+    db = get_db()
+
+    try:
+
+        cursor = db.cursor()
+
+        # ----------------------------------------------------
+        # Obtener datos de la rifa original
+        # ----------------------------------------------------
+
+        cursor.execute("""
+            SELECT
+                titulo,
+                descripcion,
+                imagen_url,
+                cantidad_boletos,
+                precio_boleto
+            FROM sp_rifas
+            WHERE id = %s
+        """, (rifa_id,))
+
+        original = cursor.fetchone()
+
+        if not original:
+
+            flash("El sorteo no existe.", "error")
+
+            return redirect(url_for("admin_rifas"))
+
+        # ----------------------------------------------------
+        # Crear la copia (estado borrador, sin fechas)
+        # ----------------------------------------------------
+
+        cursor.execute("""
+            INSERT INTO sp_rifas (
+                titulo,
+                descripcion,
+                imagen_url,
+                cantidad_boletos,
+                precio_boleto,
+                estado,
+                creado_en,
+                actualizado_en
+            )
+            VALUES (
+                %s, %s, %s, %s, %s,
+                'borrador',
+                NOW(),
+                NOW()
+            )
+            RETURNING id
+        """, (
+            original["titulo"],
+            original["descripcion"],
+            original["imagen_url"],
+            original["cantidad_boletos"],
+            original["precio_boleto"]
+        ))
+
+        nueva_rifa_id = cursor.fetchone()["id"]
+
+        # ----------------------------------------------------
+        # Crear boletos nuevos
+        # ----------------------------------------------------
+
+        for numero in range(1, original["cantidad_boletos"] + 1):
+
+            cursor.execute("""
+                INSERT INTO sp_boletos (
+                    rifa_id,
+                    numero,
+                    estado,
+                    origen,
+                    creado_en
+                )
+                VALUES (
+                    %s,
+                    %s,
+                    'disponible',
+                    'sistema',
+                    NOW()
+                )
+            """, (
+                nueva_rifa_id,
+                numero
+            ))
+
+        db.commit()
+
+        flash(
+            "Copia creada correctamente. Ahora edítala para asignar las nuevas fechas.",
+            "success"
+        )
+
+        # ----------------------------------------------------
+        # Redirigir a editar la copia
+        # ----------------------------------------------------
+
+        return redirect(
+            url_for("editar_rifa", rifa_id=nueva_rifa_id)
+        )
+
+    except Exception as error:
+
+        db.rollback()
+
+        print("ERROR AL CLONAR RIFA:", error)
+
+        flash("Ocurrió un error al reutilizar el sorteo.", "error")
+
+        return redirect(url_for("admin_rifas"))
+
+    finally:
+
+        db.close()
+
+# ============================================================
 # EJECUCIÓN LOCAL
 # ============================================================
 

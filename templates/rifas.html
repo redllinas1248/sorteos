@@ -80,6 +80,27 @@
             color: #8b5cf6;
         }
 
+        .admin-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    background: rgba(139, 92, 246, 0.12);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    border-radius: 50%;
+    font-size: 15px;
+    text-decoration: none;
+    transition: 0.2s;
+    flex-shrink: 0;
+}
+
+.admin-icon:hover {
+    background: rgba(139, 92, 246, 0.25);
+    border-color: #8b5cf6;
+    transform: scale(1.1);
+}
+
         /* ============================================
            HERO
         ============================================ */
@@ -455,11 +476,19 @@
             🎟️ Sorteos Azver
         </a>
 
-        <div class="topbar-links">
-            <a href="/rifas">Sorteos</a>
-            <a href="/rifas/consultar">Consultar</a>
-            <a href="/ganadores">Ganadores</a>
-            <a href="/faq">FAQ</a>
+        <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+
+            <div class="topbar-links">
+                <a href="/rifas">Sorteos</a>
+                <a href="/rifas/consultar">Consultar</a>
+                <a href="/ganadores">Ganadores</a>
+                <a href="/faq">FAQ</a>
+            </div>
+
+            <a href="/rifas/admin" class="admin-icon" title="Panel Admin">
+                ⚙️
+            </a>
+
         </div>
 
     </div>

@@ -201,6 +201,14 @@
                                             <button type="submit" class="boton boton-cancelar">🔴 Cancelar</button>
                                         </form>
                                     {% endif %}
+                                    
+                                    {% if rifa.estado in ['finalizada', 'cancelada'] %}
+    <form method="POST" action="{{ url_for('clonar_rifa', rifa_id=rifa.id) }}" onsubmit="return confirm('¿Reutilizar este sorteo? Se creará una copia en borrador con los mismos datos. Los boletos serán nuevos.');">
+        <button type="submit" class="boton" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed); color: white;">
+            🔄 Reutilizar
+        </button>
+    </form>
+{% endif %}
                                 </div>
                             </td>
                         </tr>
