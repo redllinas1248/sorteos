@@ -116,6 +116,10 @@ def admin_required(f):
 
 # ============================================================
 # HELPER: LIBERAR RESERVAS EXPIRADAS
+#
+# IMPORTANTE: NO libera boletos que ya generaron un voucher
+# de OXXO (tienen stripe_session_id y metodo_pago='oxxo').
+# Stripe les da hasta 5 días al usuario para pagar en tienda.
 # ============================================================
 
 def liberar_reservas_expiradas(db):
@@ -131,6 +135,10 @@ def liberar_reservas_expiradas(db):
             estado = 'reservado'
             AND reservado_en IS NOT NULL
             AND reservado_en < %s
+            AND NOT (
+                metodo_pago = 'oxxo'
+                AND stripe_session_id IS NOT NULL
+            )
     """, (cutoff,))
 
     ids = [f["id"] for f in cursor.fetchall()]
@@ -406,6 +414,7 @@ def pago(reserva_token):
                 b.metodo_pago,
                 b.nombre,
                 b.numero_especial,
+                b.stripe_session_id,
                 r.titulo,
                 r.descripcion,
                 r.imagen_url,
@@ -428,18 +437,22 @@ def pago(reserva_token):
 
             return redirect(url_for("rifas"))
 
-        # Si ya está asignado (pagado), ir directo a la tarjeta
-        if boleto["estado"] == "asignado":
+        # Si ya está asignado o pagado, ir directo a la tarjeta
+        if boleto["estado"] in ("asignado", "pagado"):
 
             return redirect(
                 url_for("tarjeta_participacion", reserva_token=reserva_token)
             )
 
-        # Si ya está pagado (legacy) también ir a tarjeta
-        if boleto["estado"] == "pagado":
+        # Si ya generó voucher OXXO → mandarlo a pago_pendiente
+        if (
+            boleto["estado"] == "reservado"
+            and boleto["metodo_pago"] == "oxxo"
+            and boleto["stripe_session_id"]
+        ):
 
             return redirect(
-                url_for("tarjeta_participacion", reserva_token=reserva_token)
+                url_for("pago_pendiente", reserva_token=reserva_token)
             )
 
         # Solo se puede pagar si está reservado
@@ -479,11 +492,6 @@ def pago(reserva_token):
 
 # ============================================================
 # INICIAR PAGO CON STRIPE CHECKOUT
-#
-# Captura los datos del participante ANTES de ir a Stripe.
-# Así funcionan tanto tarjeta como OXXO: cuando el usuario
-# regrese (o cuando llegue el webhook), los datos ya están
-# guardados en el boleto.
 # ============================================================
 
 @app.route("/rifas/pago/<reserva_token>/checkout", methods=["POST"])
@@ -501,7 +509,7 @@ def iniciar_pago(reserva_token):
         metodo = "card"
 
     # ----------------------------------------------------
-    # Validar nombre
+    # Validaciones
     # ----------------------------------------------------
 
     if not nombre:
@@ -581,9 +589,6 @@ def iniciar_pago(reserva_token):
 
         # ----------------------------------------------------
         # Crear sesión de Stripe
-        #
-        # Nota: payment_method_types fue eliminado porque
-        # Stripe ahora gestiona los métodos desde el Dashboard.
         # ----------------------------------------------------
 
         base_url = request.url_root.rstrip("/")
@@ -649,6 +654,10 @@ def iniciar_pago(reserva_token):
         db.close()
 
 
+# ============================================================
+# PAGO EXITOSO (redirect de Stripe)
+# ============================================================
+
 @app.route("/rifas/pago/<reserva_token>/exito")
 def pago_exito(reserva_token):
 
@@ -666,7 +675,6 @@ def pago_exito(reserva_token):
 
         cursor = db.cursor()
 
-        # Verificar la sesión con Stripe
         try:
 
             checkout_session = stripe.checkout.Session.retrieve(session_id)
@@ -680,8 +688,7 @@ def pago_exito(reserva_token):
             return redirect(url_for("rifas"))
 
         # ----------------------------------------------------
-        # Si el pago NO está confirmado (OXXO pendiente)
-        # → mandar a pantalla de "esperando pago"
+        # Si el pago NO está confirmado (OXXO) → pendiente
         # ----------------------------------------------------
 
         if checkout_session.payment_status not in ("paid", "no_payment_required"):
@@ -691,7 +698,7 @@ def pago_exito(reserva_token):
             )
 
         # ----------------------------------------------------
-        # Pago confirmado (Tarjeta) → marcar como asignado
+        # Pago confirmado (Tarjeta) → asignado
         # ----------------------------------------------------
 
         cursor.execute("""
@@ -719,6 +726,7 @@ def pago_exito(reserva_token):
     finally:
 
         db.close()
+
 
 # ============================================================
 # PAGO PENDIENTE (OXXO generado, esperando pago en tienda)
@@ -763,6 +771,13 @@ def pago_pendiente(reserva_token):
 
             return redirect(url_for("rifas"))
 
+        # Si ya se pagó, mandarlo a la tarjeta final
+        if boleto["estado"] in ("asignado", "pagado"):
+
+            return redirect(
+                url_for("tarjeta_participacion", reserva_token=reserva_token)
+            )
+
         return render_template(
             "pago_pendiente.html",
             boleto=boleto
@@ -793,10 +808,6 @@ def pago_cancelado(reserva_token):
 
 # ============================================================
 # WEBHOOK DE STRIPE
-#
-# Recibe notificaciones de Stripe cuando un pago se completa.
-# Los datos del participante ya están guardados desde que
-# inició el pago. Aquí solo marcamos como pagado y asignado.
 # ============================================================
 
 @app.route("/stripe/webhook", methods=["POST"])
@@ -829,14 +840,13 @@ def stripe_webhook():
 
         return "", 400
 
-    # Convertir a dict (la librería nueva devuelve StripeObject)
     event_dict = event.to_dict() if hasattr(event, "to_dict") else event
 
     event_type = event_dict["type"]
     session_data = event_dict["data"]["object"]
 
     # ============================================================
-    # CHECKOUT COMPLETED (Tarjeta y primera fase de OXXO)
+    # CHECKOUT COMPLETED
     # ============================================================
 
     if event_type == "checkout.session.completed":
@@ -851,11 +861,6 @@ def stripe_webhook():
             f"Webhook: session={session_id}, "
             f"status={payment_status}, boleto={boleto_id}"
         )
-
-        # ----------------------------------------------------
-        # Solo marcar como pagado si está confirmado
-        # (tarjeta: paid, OXXO: unpaid hasta que se pague)
-        # ----------------------------------------------------
 
         if payment_status == "paid" and boleto_id:
 
@@ -999,7 +1004,6 @@ def tarjeta_participacion(reserva_token):
 
             return redirect(url_for("rifas"))
 
-        # Aceptar asignado (nuevo) y pagado (legacy)
         if boleto["estado"] not in ("asignado", "pagado"):
 
             flash("Aún debes completar el pago para ver tu comprobante.", "error")
@@ -1093,7 +1097,11 @@ def consultar_participacion():
             cursor = db.cursor()
 
             cursor.execute("""
-                SELECT id, estado
+                SELECT
+                    id,
+                    estado,
+                    metodo_pago,
+                    stripe_session_id
                 FROM sp_boletos
                 WHERE reserva_token = %s
             """, (codigo,))
@@ -1110,14 +1118,33 @@ def consultar_participacion():
 
                 return render_template("consultar.html")
 
+            # ------------------------------------------------
+            # Boleto asignado o pagado → tarjeta final
+            # ------------------------------------------------
+
             if boleto["estado"] in ("asignado", "pagado"):
 
                 return redirect(
                     url_for("tarjeta_participacion", reserva_token=codigo)
                 )
 
+            # ------------------------------------------------
+            # Boleto reservado
+            # ------------------------------------------------
+
             elif boleto["estado"] == "reservado":
 
+                # Si ya generó voucher OXXO → pantalla de pendiente
+                if (
+                    boleto["metodo_pago"] == "oxxo"
+                    and boleto["stripe_session_id"]
+                ):
+
+                    return redirect(
+                        url_for("pago_pendiente", reserva_token=codigo)
+                    )
+
+                # Si no, mandarlo a la pantalla de pago
                 return redirect(
                     url_for("pago", reserva_token=codigo)
                 )
