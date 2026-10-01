@@ -156,15 +156,66 @@
         }
 
         /* ============================================
-           MÉTODOS DE PAGO
+           TITULOS DE SECCIÓN
         ============================================ */
 
         .titulo-seccion {
             text-align: center;
             font-size: 18px;
-            margin: 25px 0 20px;
+            margin: 30px 0 20px;
+            color: #e8ecf4;
+            padding-top: 20px;
+            border-top: 1px solid #232942;
+        }
+
+        /* ============================================
+           CAMPOS DE FORMULARIO
+        ============================================ */
+
+        .campo {
+            margin-bottom: 18px;
+        }
+
+        .campo label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 7px;
+            font-size: 14px;
             color: #e8ecf4;
         }
+
+        .campo input {
+            width: 100%;
+            padding: 14px;
+            background: #0a0d18;
+            border: 1px solid #232942;
+            border-radius: 10px;
+            font-size: 16px;
+            font-family: inherit;
+            color: #e8ecf4;
+            transition: 0.2s;
+        }
+
+        .campo input::placeholder {
+            color: #4b5563;
+        }
+
+        .campo input:focus {
+            outline: none;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+
+        .campo .ayuda {
+            display: block;
+            color: #8a93ab;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        /* ============================================
+           MÉTODOS DE PAGO
+        ============================================ */
 
         .metodos {
             display: grid;
@@ -390,7 +441,51 @@
         <!-- FORMULARIO -->
         <form id="formPago" method="POST" action="/rifas/pago/{{ boleto.reserva_token }}/checkout">
 
-            <div class="titulo-seccion">Elige tu método de pago</div>
+            <!-- ============================================
+                 DATOS DEL PARTICIPANTE
+                 (antes del pago para que funcione con OXXO)
+            ============================================= -->
+
+            <div class="titulo-seccion">📝 Tus datos</div>
+
+            <div class="campo">
+                <label for="nombre">Nombre completo *</label>
+                <input
+                    type="text"
+                    id="nombre"
+                    name="nombre"
+                    maxlength="200"
+                    required
+                    value="{{ boleto.nombre or '' }}"
+                    placeholder="Ej. Juan Pérez López"
+                    autocomplete="name"
+                >
+                <span class="ayuda">
+                    Lo usaremos para identificar tu participación en caso de que ganes.
+                </span>
+            </div>
+
+            <div class="campo">
+                <label for="numero_especial">Número especial (opcional)</label>
+                <input
+                    type="text"
+                    id="numero_especial"
+                    name="numero_especial"
+                    maxlength="50"
+                    value="{{ boleto.numero_especial or '' }}"
+                    placeholder="Ej. 7, 21, 777..."
+                >
+                <span class="ayuda">
+                    Un número extra que juegas aparte del boleto.
+                </span>
+            </div>
+
+
+            <!-- ============================================
+                 MÉTODO DE PAGO
+            ============================================= -->
+
+            <div class="titulo-seccion">💳 Elige tu método de pago</div>
 
             <div class="metodos">
 
@@ -472,7 +567,6 @@
     // CUENTA REGRESIVA
     // ============================================================
 
-    // Timestamp de expiración enviado por el backend (en milisegundos UNIX)
     const expiraEn = new Date({{ expira_en_ms or 0 }});
 
     const contadorEl = document.getElementById('contador');

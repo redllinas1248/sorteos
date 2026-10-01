@@ -81,7 +81,6 @@ def filtro_mx(dt):
 # CONFIGURACIÓN DE RESERVAS
 # ============================================================
 
-# Tiempo que un boleto queda reservado esperando el pago
 RESERVA_TTL_MINUTOS = int(os.getenv("RESERVA_TTL_MINUTOS", "30"))
 
 
@@ -117,8 +116,6 @@ def admin_required(f):
 
 # ============================================================
 # HELPER: LIBERAR RESERVAS EXPIRADAS
-#
-# Libera boletos reservados que no se pagaron a tiempo.
 # ============================================================
 
 def liberar_reservas_expiradas(db):
@@ -147,6 +144,8 @@ def liberar_reservas_expiradas(db):
             estado = 'disponible',
             reserva_token = NULL,
             reservado_en = NULL,
+            nombre = NULL,
+            numero_especial = NULL,
             actualizado_en = NOW()
         WHERE id = ANY(%s)
     """, (ids,))
@@ -161,6 +160,16 @@ def liberar_reservas_expiradas(db):
 @app.route("/")
 def inicio():
     return redirect(url_for("rifas"))
+
+
+# ============================================================
+# HEALTH
+# ============================================================
+
+@app.route("/health")
+def health():
+    return "OK"
+
 
 # ============================================================
 # LISTADO PÚBLICO DE SORTEOS
@@ -204,16 +213,6 @@ def rifas():
     finally:
 
         db.close()
-
-
-# ============================================================
-# HEALTH
-# ============================================================
-
-@app.route("/health")
-def health():
-    return "OK"
-
 
 
 # ============================================================
@@ -282,9 +281,6 @@ def participar(rifa_id):
 
 # ============================================================
 # RESERVAR BOLETO
-#
-# Reserva temporalmente el boleto por RESERVA_TTL_MINUTOS.
-# Luego el usuario va a la pantalla de pago.
 # ============================================================
 
 @app.route(
@@ -381,7 +377,7 @@ def reservar_boleto(rifa_id):
 
 
 # ============================================================
-# PANTALLA DE PAGO (antes "reserva" con videos)
+# PANTALLA DE PAGO (con captura de datos)
 # ============================================================
 
 @app.route("/rifas/pago/<reserva_token>")
@@ -432,34 +428,28 @@ def pago(reserva_token):
 
             return redirect(url_for("rifas"))
 
-        if boleto["estado"] not in ("reservado", "pagado", "asignado"):
-
-            flash("Esta reserva ya no está disponible.", "error")
-
-            return redirect(url_for("rifas"))
-
-        # Si ya está pagado, redirigir a datos
-        if boleto["estado"] == "pagado":
-
-            return redirect(
-                url_for("datos_participante", reserva_token=reserva_token)
-            )
-
-        # Si ya está asignado, redirigir a la tarjeta
+        # Si ya está asignado (pagado), ir directo a la tarjeta
         if boleto["estado"] == "asignado":
 
             return redirect(
                 url_for("tarjeta_participacion", reserva_token=reserva_token)
             )
 
-        # ----------------------------------------------------
-        # Calcular timestamp de expiración (en milisegundos UNIX)
-        #
-        # PostgreSQL devuelve reservado_en en UTC sin timezone.
-        # Lo tratamos explícitamente como UTC y calculamos la
-        # expiración para que el frontend la use directamente.
-        # ----------------------------------------------------
+        # Si ya está pagado (legacy) también ir a tarjeta
+        if boleto["estado"] == "pagado":
 
+            return redirect(
+                url_for("tarjeta_participacion", reserva_token=reserva_token)
+            )
+
+        # Solo se puede pagar si está reservado
+        if boleto["estado"] != "reservado":
+
+            flash("Esta reserva ya no está disponible.", "error")
+
+            return redirect(url_for("rifas"))
+
+        # Calcular timestamp de expiración
         expira_en_ms = None
 
         if boleto["reservado_en"]:
@@ -489,10 +479,54 @@ def pago(reserva_token):
 
 # ============================================================
 # INICIAR PAGO CON STRIPE CHECKOUT
+#
+# Captura los datos del participante ANTES de ir a Stripe.
+# Así funcionan tanto tarjeta como OXXO: cuando el usuario
+# regrese (o cuando llegue el webhook), los datos ya están
+# guardados en el boleto.
 # ============================================================
 
 @app.route("/rifas/pago/<reserva_token>/checkout", methods=["POST"])
 def iniciar_pago(reserva_token):
+
+    # ----------------------------------------------------
+    # Capturar datos del formulario
+    # ----------------------------------------------------
+
+    nombre = request.form.get("nombre", "").strip()
+    numero_especial = request.form.get("numero_especial", "").strip() or None
+    metodo = request.form.get("metodo", "card")
+
+    if metodo not in ("card", "oxxo"):
+        metodo = "card"
+
+    # ----------------------------------------------------
+    # Validar nombre
+    # ----------------------------------------------------
+
+    if not nombre:
+
+        flash("El nombre es obligatorio.", "error")
+
+        return redirect(
+            url_for("pago", reserva_token=reserva_token)
+        )
+
+    if len(nombre) > 200:
+
+        flash("El nombre es demasiado largo (máximo 200 caracteres).", "error")
+
+        return redirect(
+            url_for("pago", reserva_token=reserva_token)
+        )
+
+    if numero_especial and len(numero_especial) > 50:
+
+        flash("El número especial es demasiado largo.", "error")
+
+        return redirect(
+            url_for("pago", reserva_token=reserva_token)
+        )
 
     db = get_db()
 
@@ -531,24 +565,29 @@ def iniciar_pago(reserva_token):
                 url_for("pago", reserva_token=reserva_token)
             )
 
-        # Método de pago (solo para registro interno)
-        metodo = request.form.get("metodo", "card")
+        # ----------------------------------------------------
+        # Guardar datos en el boleto
+        # ----------------------------------------------------
 
-        if metodo not in ("card", "oxxo"):
+        cursor.execute("""
+            UPDATE sp_boletos
+            SET
+                nombre = %s,
+                numero_especial = %s,
+                metodo_pago = %s,
+                actualizado_en = NOW()
+            WHERE id = %s
+        """, (nombre, numero_especial, metodo, boleto["id"]))
 
-            metodo = "card"
-
-        # Base URL (para las redirect URLs)
-        base_url = request.url_root.rstrip("/")
-
+        # ----------------------------------------------------
         # Crear sesión de Stripe
         #
-        # IMPORTANTE:
-        # Ya NO se pasa payment_method_types porque Stripe
-        # cambió su API. Ahora los métodos de pago (tarjeta,
-        # OXXO, etc.) se configuran desde el Dashboard:
-        # https://dashboard.stripe.com/settings/payment_methods
-        #
+        # Nota: payment_method_types fue eliminado porque
+        # Stripe ahora gestiona los métodos desde el Dashboard.
+        # ----------------------------------------------------
+
+        base_url = request.url_root.rstrip("/")
+
         checkout_session = stripe.checkout.Session.create(
 
             line_items=[{
@@ -578,15 +617,13 @@ def iniciar_pago(reserva_token):
             },
         )
 
-        # Guardar el session_id en el boleto
         cursor.execute("""
             UPDATE sp_boletos
             SET
                 stripe_session_id = %s,
-                metodo_pago = %s,
                 actualizado_en = NOW()
             WHERE id = %s
-        """, (checkout_session.id, metodo, boleto["id"]))
+        """, (checkout_session.id, boleto["id"]))
 
         db.commit()
 
@@ -611,8 +648,13 @@ def iniciar_pago(reserva_token):
 
         db.close()
 
+
 # ============================================================
-# PAGO EXITOSO (redirect de Stripe después del pago)
+# PAGO EXITOSO (redirect de Stripe)
+#
+# Los datos del participante ya están guardados (los capturamos
+# al iniciar el pago). Aquí solo marcamos como pagado y
+# asignado, y redirigimos a la tarjeta final.
 # ============================================================
 
 @app.route("/rifas/pago/<reserva_token>/exito")
@@ -658,12 +700,13 @@ def pago_exito(reserva_token):
                 url_for("pago", reserva_token=reserva_token)
             )
 
-        # Marcar boleto como pagado
+        # Marcar boleto como pagado Y asignado
         cursor.execute("""
             UPDATE sp_boletos
             SET
-                estado = 'pagado',
+                estado = 'asignado',
                 pagado_en = NOW(),
+                asignado_en = NOW(),
                 monto_pagado = %s,
                 actualizado_en = NOW()
             WHERE
@@ -676,9 +719,9 @@ def pago_exito(reserva_token):
 
         db.commit()
 
-        # Redirigir a los datos
+        # Ir directo a la tarjeta final
         return redirect(
-            url_for("datos_participante", reserva_token=reserva_token)
+            url_for("tarjeta_participacion", reserva_token=reserva_token)
         )
 
     finally:
@@ -708,7 +751,8 @@ def pago_cancelado(reserva_token):
 # WEBHOOK DE STRIPE
 #
 # Recibe notificaciones de Stripe cuando un pago se completa.
-# Este es el método SEGURO para confirmar pagos.
+# Los datos del participante ya están guardados desde que
+# inició el pago. Aquí solo marcamos como pagado y asignado.
 # ============================================================
 
 @app.route("/stripe/webhook", methods=["POST"])
@@ -741,21 +785,14 @@ def stripe_webhook():
 
         return "", 400
 
-    # ============================================================
-    # CONVERTIR STRIPE OBJECT A DICT
-    #
-    # La librería de Stripe devuelve objetos especiales (StripeObject)
-    # que NO tienen el método .get(). Los convertimos a dict con
-    # .to_dict() para poder usar .get() sin problemas.
-    # ============================================================
-
+    # Convertir a dict (la librería nueva devuelve StripeObject)
     event_dict = event.to_dict() if hasattr(event, "to_dict") else event
 
     event_type = event_dict["type"]
     session_data = event_dict["data"]["object"]
 
     # ============================================================
-    # EVENTO: CHECKOUT SESSION COMPLETED
+    # CHECKOUT COMPLETED (Tarjeta y primera fase de OXXO)
     # ============================================================
 
     if event_type == "checkout.session.completed":
@@ -772,10 +809,8 @@ def stripe_webhook():
         )
 
         # ----------------------------------------------------
-        # Solo marcar como pagado si el pago está confirmado
-        #
-        # - Tarjeta: payment_status = "paid"  → marcar pagado
-        # - OXXO:    payment_status = "unpaid" → esperar async
+        # Solo marcar como pagado si está confirmado
+        # (tarjeta: paid, OXXO: unpaid hasta que se pague)
         # ----------------------------------------------------
 
         if payment_status == "paid" and boleto_id:
@@ -789,8 +824,9 @@ def stripe_webhook():
                 cursor.execute("""
                     UPDATE sp_boletos
                     SET
-                        estado = 'pagado',
+                        estado = 'asignado',
                         pagado_en = NOW(),
+                        asignado_en = NOW(),
                         monto_pagado = %s,
                         actualizado_en = NOW()
                     WHERE
@@ -820,7 +856,7 @@ def stripe_webhook():
             )
 
     # ============================================================
-    # EVENTO: ASYNC PAYMENT SUCCEEDED (OXXO pagado en tienda)
+    # ASYNC PAYMENT SUCCEEDED (OXXO pagado en tienda)
     # ============================================================
 
     elif event_type == "checkout.session.async_payment_succeeded":
@@ -843,8 +879,9 @@ def stripe_webhook():
                 cursor.execute("""
                     UPDATE sp_boletos
                     SET
-                        estado = 'pagado',
+                        estado = 'asignado',
                         pagado_en = NOW(),
+                        asignado_en = NOW(),
                         monto_pagado = %s,
                         actualizado_en = NOW()
                     WHERE
@@ -866,197 +903,11 @@ def stripe_webhook():
 
                 db.close()
 
-    # ============================================================
-    # OTROS EVENTOS (no manejados)
-    # ============================================================
-
     else:
 
         print(f"ℹ️ Evento recibido sin manejar: {event_type}")
 
     return "", 200
-
-
-# ============================================================
-# FORMULARIO DE DATOS DEL PARTICIPANTE
-# ============================================================
-
-@app.route("/rifas/reserva/<reserva_token>/datos")
-def datos_participante(reserva_token):
-
-    db = get_db()
-
-    try:
-
-        cursor = db.cursor()
-
-        cursor.execute("""
-            SELECT
-                b.id,
-                b.rifa_id,
-                b.numero,
-                b.estado,
-                b.reserva_token,
-                b.nombre,
-                b.numero_especial,
-                r.titulo,
-                r.descripcion,
-                r.imagen_url
-            FROM sp_boletos b
-            INNER JOIN sp_rifas r
-                ON r.id = b.rifa_id
-            WHERE b.reserva_token = %s
-        """, (reserva_token,))
-
-        boleto = cursor.fetchone()
-
-        if not boleto:
-
-            flash("La reserva no existe.", "error")
-
-            return redirect(url_for("rifas"))
-
-        if boleto["estado"] not in ("pagado", "asignado"):
-
-            flash("Primero debes completar el pago.", "error")
-
-            return redirect(
-                url_for("pago", reserva_token=reserva_token)
-            )
-
-        if boleto["estado"] == "asignado":
-
-            return redirect(
-                url_for("tarjeta_participacion", reserva_token=reserva_token)
-            )
-
-        return render_template(
-            "datos_participante.html",
-            boleto=boleto
-        )
-
-    finally:
-
-        db.close()
-
-
-# ============================================================
-# GUARDAR DATOS DEL PARTICIPANTE
-# ============================================================
-
-@app.route(
-    "/rifas/reserva/<reserva_token>/datos",
-    methods=["POST"]
-)
-def guardar_datos_participante(reserva_token):
-
-    nombre = request.form.get("nombre", "").strip()
-    numero_especial = request.form.get("numero_especial", "").strip()
-
-    if not nombre:
-
-        flash("El nombre es obligatorio.", "error")
-
-        return redirect(
-            url_for("datos_participante", reserva_token=reserva_token)
-        )
-
-    if len(nombre) > 200:
-
-        flash("El nombre es demasiado largo (máximo 200 caracteres).", "error")
-
-        return redirect(
-            url_for("datos_participante", reserva_token=reserva_token)
-        )
-
-    if numero_especial and len(numero_especial) > 50:
-
-        flash("El número especial es demasiado largo.", "error")
-
-        return redirect(
-            url_for("datos_participante", reserva_token=reserva_token)
-        )
-
-    if not numero_especial:
-        numero_especial = None
-
-    db = get_db()
-
-    try:
-
-        cursor = db.cursor()
-
-        cursor.execute("""
-            SELECT id, estado
-            FROM sp_boletos
-            WHERE reserva_token = %s
-            FOR UPDATE
-        """, (reserva_token,))
-
-        boleto = cursor.fetchone()
-
-        if not boleto:
-
-            db.rollback()
-
-            flash("Reserva no encontrada.", "error")
-
-            return redirect(url_for("rifas"))
-
-        if boleto["estado"] not in ("pagado", "asignado"):
-
-            db.rollback()
-
-            flash("Esta reserva no puede registrar datos todavía.", "error")
-
-            return redirect(
-                url_for("pago", reserva_token=reserva_token)
-            )
-
-        cursor.execute("""
-            UPDATE sp_boletos
-            SET
-                nombre = %s,
-                numero_especial = %s,
-                estado = 'asignado',
-                asignado_en = NOW(),
-                actualizado_en = NOW()
-            WHERE
-                id = %s
-                AND estado IN ('pagado', 'asignado')
-        """, (nombre, numero_especial, boleto["id"]))
-
-        if cursor.rowcount != 1:
-
-            db.rollback()
-
-            flash("No fue posible guardar los datos.", "error")
-
-            return redirect(
-                url_for("datos_participante", reserva_token=reserva_token)
-            )
-
-        db.commit()
-
-        return redirect(
-            url_for("tarjeta_participacion", reserva_token=reserva_token)
-        )
-
-    except Exception as error:
-
-        db.rollback()
-
-        print("ERROR AL GUARDAR DATOS:", error)
-
-        flash("Ocurrió un error al guardar los datos.", "error")
-
-        return redirect(
-            url_for("datos_participante", reserva_token=reserva_token)
-        )
-
-    finally:
-
-        db.close()
 
 
 # ============================================================
@@ -1085,6 +936,7 @@ def tarjeta_participacion(reserva_token):
                 b.asignado_en,
                 b.pagado_en,
                 b.monto_pagado,
+                b.metodo_pago,
                 r.titulo,
                 r.descripcion,
                 r.imagen_url,
@@ -1103,9 +955,10 @@ def tarjeta_participacion(reserva_token):
 
             return redirect(url_for("rifas"))
 
-        if boleto["estado"] != "asignado":
+        # Aceptar asignado (nuevo) y pagado (legacy)
+        if boleto["estado"] not in ("asignado", "pagado"):
 
-            flash("Aún debes completar los pasos para ver tu comprobante.", "error")
+            flash("Aún debes completar el pago para ver tu comprobante.", "error")
 
             return redirect(
                 url_for("pago", reserva_token=reserva_token)
@@ -1151,7 +1004,7 @@ def ganadores():
 
 
 # ============================================================
-# PWA (manifest y service worker)
+# PWA
 # ============================================================
 
 @app.route("/manifest.json")
@@ -1205,17 +1058,21 @@ def consultar_participacion():
 
             if not boleto:
 
-                flash("No encontramos ninguna participación con ese código.", "error")
+                flash(
+                    "No encontramos ninguna participación con ese código. "
+                    "Verifícalo e intenta de nuevo.",
+                    "error"
+                )
 
                 return render_template("consultar.html")
 
-            if boleto["estado"] == "asignado":
+            if boleto["estado"] in ("asignado", "pagado"):
 
                 return redirect(
                     url_for("tarjeta_participacion", reserva_token=codigo)
                 )
 
-            elif boleto["estado"] in ("reservado", "pagado"):
+            elif boleto["estado"] == "reservado":
 
                 return redirect(
                     url_for("pago", reserva_token=codigo)
@@ -1491,6 +1348,8 @@ def admin_liberar_boleto(boleto_id):
                 stripe_session_id = NULL,
                 metodo_pago = NULL,
                 monto_pagado = NULL,
+                nombre = NULL,
+                numero_especial = NULL,
                 actualizado_en = NOW()
             WHERE id = %s
         """, (boleto["id"],))
