@@ -156,6 +156,71 @@
         }
 
         /* ============================================
+           CÓDIGO DE PARTICIPACIÓN (visible antes del pago)
+        ============================================ */
+
+        .codigo-previo {
+            background: rgba(59, 130, 246, 0.08);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .codigo-previo small {
+            display: block;
+            color: #60a5fa;
+            font-size: 12px;
+            font-weight: bold;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
+        }
+
+        .codigo-previo code {
+            display: block;
+            background: #0a0d18;
+            border: 1px solid #232942;
+            border-radius: 10px;
+            padding: 12px;
+            color: #a5b4fc;
+            font-size: 13px;
+            font-weight: bold;
+            word-break: break-all;
+            margin-bottom: 12px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .btn-copiar {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 13px;
+            cursor: pointer;
+            transition: 0.2s;
+            font-family: inherit;
+        }
+
+        .btn-copiar:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+        }
+
+        .aviso-codigo {
+            margin: 15px 0 0;
+            font-size: 13px;
+            color: #8a93ab;
+            line-height: 1.5;
+        }
+
+        .aviso-codigo strong {
+            color: #fbbf24;
+        }
+
+        /* ============================================
            TITULOS DE SECCIÓN
         ============================================ */
 
@@ -438,12 +503,34 @@
         </div>
 
 
+        <!-- ============================================
+             CÓDIGO DE PARTICIPACIÓN (visible antes del pago)
+        ============================================= -->
+
+        <div class="codigo-previo">
+
+            <small>📌 TU CÓDIGO DE PARTICIPACIÓN</small>
+
+            <code id="codigoParticipacion">{{ boleto.reserva_token }}</code>
+
+            <button type="button" class="btn-copiar" onclick="copiarCodigo()">
+                📋 Copiar código
+            </button>
+
+            <p class="aviso-codigo">
+                ⚠️ <strong>Guarda este código</strong> antes de pagar.
+                Lo necesitarás para consultar tu participación
+                (especialmente si pagas en OXXO).
+            </p>
+
+        </div>
+
+
         <!-- FORMULARIO -->
         <form id="formPago" method="POST" action="/rifas/pago/{{ boleto.reserva_token }}/checkout">
 
             <!-- ============================================
                  DATOS DEL PARTICIPANTE
-                 (antes del pago para que funcione con OXXO)
             ============================================= -->
 
             <div class="titulo-seccion">📝 Tus datos</div>
@@ -599,13 +686,59 @@
 
 
     // ============================================================
+    // COPIAR CÓDIGO DE PARTICIPACIÓN
+    // ============================================================
+
+    function copiarCodigo() {
+
+        const codigo = "{{ boleto.reserva_token }}";
+
+        navigator.clipboard.writeText(codigo).then(function() {
+
+            alert(
+                '✅ Código copiado al portapapeles:\n\n' +
+                codigo +
+                '\n\nGuárdalo en un lugar seguro.'
+            );
+
+        }).catch(function() {
+
+            prompt('Copia tu código manualmente:', codigo);
+
+        });
+
+    }
+
+
+    // ============================================================
     // SUBMIT DEL FORMULARIO
     // ============================================================
 
     const form = document.getElementById('formPago');
     const overlay = document.getElementById('overlayPago');
 
-    form.addEventListener('submit', function() {
+    form.addEventListener('submit', function(e) {
+
+        // Si elige OXXO, mostrar confirmación con aviso
+        const metodoSeleccionado = document.querySelector('input[name="metodo"]:checked').value;
+
+        if (metodoSeleccionado === 'oxxo') {
+
+            const confirmar = confirm(
+                '📌 IMPORTANTE\n\n' +
+                'Vas a generar un voucher de OXXO.\n\n' +
+                '1. GUARDA tu código de participación (arriba de este formulario).\n' +
+                '2. Imprime o guarda el voucher de Stripe.\n' +
+                '3. Paga en cualquier OXXO.\n' +
+                '4. Regresa a la sección "Consultar" con tu código.\n\n' +
+                '¿Ya guardaste tu código?'
+            );
+
+            if (!confirmar) {
+                e.preventDefault();
+                return;
+            }
+        }
 
         btnPagar.disabled = true;
         btnPagar.textContent = '⏳ Redirigiendo...';
