@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Panel - Sorteos Azver</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: Arial, sans-serif; background: #0a0d18; color: #e8ecf4; }
+        header { background: #141827; border-bottom: 1px solid #232942; padding: 20px; }
+        header .contenedor { max-width: 1200px; margin: auto; display: flex; justify-content: space-between; align-items: center; gap: 15px; flex-wrap: wrap; }
+        header h1 { margin: 0; font-size: 22px; }
+        .saludo { color: #8a93ab; font-size: 14px; margin-top: 4px; }
+        main { max-width: 1200px; margin: 30px auto; padding: 20px; }
+        .boton { display: inline-block; padding: 11px 16px; border: none; border-radius: 9px; text-decoration: none; font-weight: bold; cursor: pointer; font-size: 14px; transition: 0.2s; color: white; }
+        .boton-salir { background: #4b5563; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 40px; }
+        .stat-card { background: #141827; border: 1px solid #232942; border-radius: 12px; padding: 20px; text-align: center; }
+        .stat-card h3 { margin: 0 0 10px; font-size: 13px; color: #8a93ab; text-transform: uppercase; letter-spacing: 1px; }
+        .stat-card .numero { font-size: 30px; font-weight: bold; color: #e8ecf4; }
+        .stat-card .numero.verde { color: #34d399; }
+        .stat-card .numero.azul { color: #60a5fa; }
+        .stat-card .numero.violeta { color: #a78bfa; }
+        .stat-card .numero.amarillo { color: #fbbf24; }
+        .stat-card .numero.gris { color: #9ca3af; }
+        .stat-card.destacado { border-color: rgba(16, 185, 129, 0.5); background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(16, 185, 129, 0.02)); }
+        h2 { margin: 0 0 20px; }
+        .tabla-contenedor { background: #141827; border: 1px solid #232942; border-radius: 15px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 900px; }
+        th, td { padding: 14px; text-align: left; border-bottom: 1px solid #232942; vertical-align: middle; }
+        th { background: #0a0d18; font-size: 13px; color: #8a93ab; text-transform: uppercase; letter-spacing: 0.5px; }
+        td { font-size: 14px; }
+        .titulo { font-weight: bold; color: #e8ecf4; }
+        .descripcion { color: #8a93ab; max-width: 280px; margin-top: 4px; font-size: 13px; }
+        .estado { display: inline-block; padding: 6px 11px; border-radius: 20px; font-size: 12px; font-weight: bold; text-transform: uppercase; }
+        .estado.borrador { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+        .estado.activa { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+        .estado.pausada { background: rgba(139, 92, 246, 0.15); color: #a78bfa; }
+        .estado.finalizada { background: rgba(107, 114, 128, 0.2); color: #9ca3af; }
+        .estado.cancelada { background: rgba(239, 68, 68, 0.15); color: #fca5a5; }
+        .stats-rifa { display: flex; gap: 10px; font-size: 13px; flex-wrap: wrap; }
+        .stats-rifa span { color: #8a93ab; }
+        .stats-rifa strong { color: #e8ecf4; }
+        .fecha { white-space: nowrap; color: #8a93ab; font-size: 13px; }
+        .flash { padding: 14px 18px; border-radius: 10px; margin-bottom: 20px; font-weight: bold; }
+        .flash.success { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+        .flash.error { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .vacio { text-align: center; padding: 60px 20px; color: #8a93ab; }
+        .vacio h2 { color: #e8ecf4; }
+        .info-box { background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 12px; padding: 15px; margin-bottom: 30px; font-size: 14px; color: #93c5fd; line-height: 1.5; }
+        @media (max-width: 700px) { main { margin: 15px auto; padding: 12px; } th, td { padding: 10px; font-size: 13px; } }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="contenedor">
+        <div>
+            <h1>📊 Mi Panel</h1>
+            <div class="saludo">Sesión: {{ session.admin_nombre }}</div>
+        </div>
+        <a href="{{ url_for('admin_logout') }}" class="boton boton-salir">Cerrar Sesión</a>
+    </div>
+</header>
+
+<main>
+
+    {% with mensajes = get_flashed_messages(with_categories=true) %}
+        {% if mensajes %}
+            {% for categoria, mensaje in mensajes %}
+                <div class="flash {{ categoria }}">{{ mensaje }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="info-box">
+        ℹ️ Este es tu panel personal. Aquí ves las estadísticas de tus sorteos. Si tienes dudas, contacta al administrador.
+    </div>
+
+    <!-- ==========================================
+         ESTADÍSTICAS GLOBALES
+         ========================================== -->
+
+    <h2>Estadísticas de tus sorteos</h2>
+
+    <div class="stats-grid">
+
+        <div class="stat-card destacado">
+            <h3>Ingresos Totales</h3>
+            <div class="numero verde">
+                ${{ "%.2f"|format(stats_vendedor.ingresos_totales) }}
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <h3>Boletos Vendidos</h3>
+            <div class="numero verde">{{ stats_vendedor.boletos_vendidos }}</div>
+        </div>
+
+        <div class="stat-card">
+            <h3>Reservados</h3>
+            <div class="numero azul">{{ stats_boletos.get('reservado', 0) }}</div>
+        </div>
+
+        <div class="stat-card">
+            <h3>Pagados sin datos</h3>
+            <div class="numero violeta">{{ stats_boletos.get('pagado', 0) }}</div>
+        </div>
+
+        <div class="stat-card">
+            <h3>Disponibles</h3>
+            <div class="numero gris">{{ stats_boletos.get('disponible', 0) }}</div>
+        </div>
+
+    </div>
+
+    <!-- ==========================================
+         TUS RIFAS
+         ========================================== -->
+
+    <h2>Mis rifas</h2>
+
+    {% if rifas %}
+
+        <div class="tabla-contenedor">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Rifa</th>
+                        <th>Progreso</th>
+                        <th>Estado</th>
+                        <th>Sorteo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rifa in rifas %}
+                        <tr>
+                            <td>#{{ rifa.id }}</td>
+                            <td>
+                                <div class="titulo">{{ rifa.titulo }}</div>
+                                {% if rifa.descripcion %}
+                                    <div class="descripcion">{{ rifa.descripcion }}</div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% set stats = stats_por_rifa.get(rifa.id) %}
+                                {% if stats %}
+                                    <div class="stats-rifa">
+                                        <span>🟢 <strong>{{ stats.disponibles }}</strong></span>
+                                        <span>🔵 <strong>{{ stats.reservados }}</strong></span>
+                                        <span>🟣 <strong>{{ stats.pagados }}</strong></span>
+                                        <span>🟡 <strong>{{ stats.asignados }}</strong></span>
+                                    </div>
+                                {% else %}
+                                    <span style="color:#4b5563;">—</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="estado {{ rifa.estado }}">{{ rifa.estado }}</span>
+                            </td>
+                            <td class="fecha">
+                                {% if rifa.fecha_sorteo %}
+                                    {{ rifa.fecha_sorteo.strftime('%d/%m/%Y %H:%M') }}
+                                {% else %}
+                                    Sin definir
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    {% else %}
+
+        <div class="tabla-contenedor">
+            <div class="vacio">
+                <h2>🎁 Aún no tienes rifas</h2>
+                <p>Cuando el administrador te asigne una rifa, aparecerá aquí.</p>
+            </div>
+        </div>
+
+    {% endif %}
+
+</main>
+
+</body>
+</html>

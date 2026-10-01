@@ -7,6 +7,11 @@ from datetime import (
     timezone
 )
 
+from werkzeug.security import (
+    generate_password_hash,
+    check_password_hash
+)
+
 from zoneinfo import ZoneInfo
 
 from functools import wraps
@@ -112,6 +117,41 @@ def admin_required(f):
         return f(*args, **kwargs)
 
     return decorated_function
+
+
+# ============================================================
+# DECORADOR: SOLO SUPER ADMIN
+#
+# Bloquea el acceso a usuarios restringidos. Si intentan
+# entrar a una ruta de super admin, los redirige a su panel.
+# ============================================================
+
+def super_admin_required(f):
+
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+
+        if not session.get("admin_logged_in"):
+
+            flash("Debes iniciar sesión como administrador.", "error")
+
+            return redirect(
+                url_for("admin_login", next=request.path)
+            )
+
+        if session.get("admin_type") != "super":
+
+            flash(
+                "No tienes permiso para acceder a esa sección.",
+                "error"
+            )
+
+            return redirect(url_for("mi_panel"))
+
+        return f(*args, **kwargs)
+
+    return decorated_function
+
 
 
 # ============================================================
@@ -1164,6 +1204,10 @@ def consultar_participacion():
 
 # ============================================================
 # LOGIN DE ADMINISTRACIÓN
+#
+# Acepta 2 tipos de usuarios:
+#   - Super admin (via variables de entorno)
+#   - Usuarios restringidos (via tabla sp_admins)
 # ============================================================
 
 @app.route("/rifas/admin/login", methods=["GET", "POST"])
@@ -1174,6 +1218,10 @@ def admin_login():
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "").strip()
 
+        # ----------------------------------------------------
+        # 1. Verificar si es el SUPER ADMIN
+        # ----------------------------------------------------
+
         if (
             ADMIN_USERNAME
             and ADMIN_PASSWORD
@@ -1182,9 +1230,12 @@ def admin_login():
         ):
 
             session["admin_logged_in"] = True
+            session["admin_type"] = "super"
+            session["admin_username"] = username
+            session["admin_nombre"] = "Super Admin"
             session.permanent = True
 
-            flash("Has iniciado sesión correctamente.", "success")
+            flash("Has iniciado sesión como super admin.", "success")
 
             next_page = request.args.get("next")
 
@@ -1193,9 +1244,66 @@ def admin_login():
 
             return redirect(url_for("admin_rifas"))
 
-        else:
+        # ----------------------------------------------------
+        # 2. Verificar si es un usuario restringido
+        # ----------------------------------------------------
 
-            flash("Usuario o contraseña incorrectos.", "error")
+        db = get_db()
+
+        try:
+
+            cursor = db.cursor()
+
+            cursor.execute("""
+                SELECT
+                    id,
+                    username,
+                    password_hash,
+                    nombre,
+                    propietario_slug,
+                    activo
+                FROM sp_admins
+                WHERE username = %s
+            """, (username,))
+
+            usuario = cursor.fetchone()
+
+            if usuario and usuario["activo"] and check_password_hash(
+                usuario["password_hash"], password
+            ):
+
+                # Actualizar último acceso
+                cursor.execute("""
+                    UPDATE sp_admins
+                    SET ultimo_acceso = NOW()
+                    WHERE id = %s
+                """, (usuario["id"],))
+
+                db.commit()
+
+                session["admin_logged_in"] = True
+                session["admin_type"] = "restringido"
+                session["admin_username"] = usuario["username"]
+                session["admin_nombre"] = usuario["nombre"]
+                session["propietario_slug"] = usuario["propietario_slug"]
+                session.permanent = True
+
+                flash(
+                    f"Bienvenido, {usuario['nombre']}.",
+                    "success"
+                )
+
+                return redirect(url_for("mi_panel"))
+
+        finally:
+
+            db.close()
+
+        # ----------------------------------------------------
+        # Si llegó aquí, las credenciales fueron incorrectas
+        # ----------------------------------------------------
+
+        flash("Usuario o contraseña incorrectos.", "error")
 
     return render_template("admin_login.html")
 
@@ -1204,6 +1312,10 @@ def admin_login():
 def admin_logout():
 
     session.pop("admin_logged_in", None)
+    session.pop("admin_type", None)
+    session.pop("admin_username", None)
+    session.pop("admin_nombre", None)
+    session.pop("propietario_slug", None)
 
     flash("Has cerrado sesión.", "success")
 
@@ -1215,7 +1327,7 @@ def admin_logout():
 # ============================================================
 
 @app.route("/rifas/admin")
-@admin_required
+@@super_admin_required
 def admin_rifas():
 
     db = get_db()
@@ -1347,7 +1459,7 @@ def admin_rifas():
 # ============================================================
 
 @app.route("/rifas/admin/participantes/<int:rifa_id>")
-@admin_required
+@@super_admin_required
 def admin_participantes(rifa_id):
 
     db = get_db()
@@ -1417,7 +1529,7 @@ def admin_participantes(rifa_id):
     "/rifas/admin/liberar-boleto/<int:boleto_id>",
     methods=["POST"]
 )
-@admin_required
+@@super_admin_required
 def admin_liberar_boleto(boleto_id):
 
     db = get_db()
@@ -1502,7 +1614,7 @@ def admin_liberar_boleto(boleto_id):
 # ============================================================
 
 @app.route("/rifas/admin/tickets/<int:rifa_id>")
-@admin_required
+@@super_admin_required
 def admin_tickets(rifa_id):
 
     db = get_db()
@@ -1554,13 +1666,13 @@ def admin_tickets(rifa_id):
 # ============================================================
 
 @app.route("/rifas/admin/nueva")
-@admin_required
+@@super_admin_required
 def nueva_rifa():
     return render_template("nueva_rifa.html")
 
 
 @app.route("/rifas/admin/nueva", methods=["POST"])
-@admin_required
+@@super_admin_required
 def crear_rifa():
 
     titulo = request.form.get("titulo", "").strip()
@@ -1671,7 +1783,7 @@ def crear_rifa():
 # ============================================================
 
 @app.route("/rifas/admin/editar/<int:rifa_id>")
-@admin_required
+@@super_admin_required
 def editar_rifa(rifa_id):
 
     db = get_db()
@@ -1709,7 +1821,7 @@ def editar_rifa(rifa_id):
 
 
 @app.route("/rifas/admin/editar/<int:rifa_id>", methods=["POST"])
-@admin_required
+@@super_admin_required
 def actualizar_rifa(rifa_id):
 
     titulo = request.form.get("titulo", "").strip()
@@ -1813,7 +1925,7 @@ def actualizar_rifa(rifa_id):
 # ============================================================
 
 @app.route("/rifas/admin/publicar/<int:rifa_id>", methods=["POST"])
-@admin_required
+@@super_admin_required
 def publicar_rifa(rifa_id):
 
     db = get_db()
@@ -1851,7 +1963,7 @@ def publicar_rifa(rifa_id):
 
 
 @app.route("/rifas/admin/pausar/<int:rifa_id>", methods=["POST"])
-@admin_required
+@@super_admin_required
 def pausar_rifa(rifa_id):
 
     db = get_db()
@@ -1889,7 +2001,7 @@ def pausar_rifa(rifa_id):
 
 
 @app.route("/rifas/admin/reanudar/<int:rifa_id>", methods=["POST"])
-@admin_required
+@@super_admin_required
 def reanudar_rifa(rifa_id):
 
     db = get_db()
@@ -1927,7 +2039,7 @@ def reanudar_rifa(rifa_id):
 
 
 @app.route("/rifas/admin/finalizar/<int:rifa_id>", methods=["POST"])
-@admin_required
+@@super_admin_required
 def finalizar_rifa(rifa_id):
 
     db = get_db()
@@ -1965,7 +2077,7 @@ def finalizar_rifa(rifa_id):
 
 
 @app.route("/rifas/admin/cancelar/<int:rifa_id>", methods=["POST"])
-@admin_required
+@@super_admin_required
 def cancelar_rifa(rifa_id):
 
     db = get_db()
@@ -2014,7 +2126,7 @@ def cancelar_rifa(rifa_id):
 # ============================================================
 
 @app.route("/rifas/admin/clonar/<int:rifa_id>", methods=["POST"])
-@admin_required
+@@super_admin_required
 def clonar_rifa(rifa_id):
 
     db = get_db()
@@ -2133,6 +2245,143 @@ def clonar_rifa(rifa_id):
 
         db.close()
 
+
+# ============================================================
+# PANEL DE USUARIO RESTRINGIDO
+#
+# Muestra solo las rifas del propietario que inició sesión
+# y sus estadísticas. Sin botones de acción.
+# ============================================================
+
+@app.route("/rifas/mi-panel")
+@admin_required
+def mi_panel():
+
+    # ----------------------------------------------------
+    # Si es super admin, mándalo al panel completo
+    # ----------------------------------------------------
+
+    if session.get("admin_type") == "super":
+
+        return redirect(url_for("admin_rifas"))
+
+    # ----------------------------------------------------
+    # Obtener el slug del propietario
+    # ----------------------------------------------------
+
+    propietario_slug = session.get("propietario_slug")
+
+    if not propietario_slug:
+
+        flash("Sesión inválida.", "error")
+
+        return redirect(url_for("admin_logout"))
+
+    db = get_db()
+
+    try:
+
+        cursor = db.cursor()
+
+        # ------------------------------------------------
+        # Rifas del propietario
+        # ------------------------------------------------
+
+        cursor.execute("""
+            SELECT
+                id,
+                titulo,
+                descripcion,
+                imagen_url,
+                cantidad_boletos,
+                precio_boleto,
+                estado,
+                fecha_inicio,
+                fecha_fin,
+                fecha_sorteo,
+                creado_en
+            FROM sp_rifas
+            WHERE propietario_slug = %s
+            ORDER BY creado_en DESC
+        """, (propietario_slug,))
+
+        rifas = cursor.fetchall()
+
+        # ------------------------------------------------
+        # Stats globales del propietario
+        # (solo sorteos en curso)
+        # ------------------------------------------------
+
+        cursor.execute("""
+            SELECT b.estado, COUNT(*) AS total
+            FROM sp_boletos b
+            INNER JOIN sp_rifas r ON r.id = b.rifa_id
+            WHERE r.propietario_slug = %s
+              AND r.estado IN ('activa', 'pausada')
+            GROUP BY b.estado
+        """, (propietario_slug,))
+
+        stats_boletos = {
+            fila["estado"]: fila["total"]
+            for fila in cursor.fetchall()
+        }
+
+        # ------------------------------------------------
+        # Ingresos totales del propietario (todos sus sorteos)
+        # ------------------------------------------------
+
+        cursor.execute("""
+            SELECT
+                COALESCE(SUM(b.monto_pagado), 0) AS ingresos_totales,
+                COUNT(*) FILTER (
+                    WHERE b.estado IN ('asignado', 'pagado')
+                ) AS boletos_vendidos
+            FROM sp_boletos b
+            INNER JOIN sp_rifas r ON r.id = b.rifa_id
+            WHERE r.propietario_slug = %s
+        """, (propietario_slug,))
+
+        stats_vendedor = cursor.fetchone()
+
+        # ------------------------------------------------
+        # Stats por rifa (solo las del propietario)
+        # ------------------------------------------------
+
+        cursor.execute("""
+            SELECT
+                r.id,
+                COUNT(CASE WHEN b.estado = 'disponible' THEN 1 END) AS disponibles,
+                COUNT(CASE WHEN b.estado = 'reservado' THEN 1 END) AS reservados,
+                COUNT(CASE WHEN b.estado = 'pagado' THEN 1 END) AS pagados,
+                COUNT(CASE WHEN b.estado = 'asignado' THEN 1 END) AS asignados
+            FROM sp_rifas r
+            LEFT JOIN sp_boletos b ON b.rifa_id = r.id
+            WHERE r.propietario_slug = %s
+            GROUP BY r.id
+        """, (propietario_slug,))
+
+        stats_por_rifa = {
+            fila["id"]: {
+                "disponibles": fila["disponibles"],
+                "reservados": fila["reservados"],
+                "pagados": fila["pagados"],
+                "asignados": fila["asignados"]
+            }
+            for fila in cursor.fetchall()
+        }
+
+        return render_template(
+            "mi_panel.html",
+            rifas=rifas,
+            stats_boletos=stats_boletos,
+            stats_vendedor=stats_vendedor,
+            stats_por_rifa=stats_por_rifa
+        )
+
+    finally:
+
+        db.close()
+
 # ============================================================
 # ADMIN: GESTIÓN DE USUARIOS RESTRINGIDOS
 # Solo el super admin puede crear/editar usuarios para
@@ -2140,7 +2389,7 @@ def clonar_rifa(rifa_id):
 # ============================================================
 
 @app.route("/rifas/admin/admins")
-@admin_required
+@@super_admin_required
 def admin_usuarios():
 
     db = get_db()
@@ -2175,13 +2424,13 @@ def admin_usuarios():
 
 
 @app.route("/rifas/admin/admins/nuevo")
-@admin_required
+@@super_admin_required
 def nuevo_admin():
     return render_template("nuevo_admin.html")
 
 
 @app.route("/rifas/admin/admins/nuevo", methods=["POST"])
-@admin_required
+@@super_admin_required
 def crear_admin():
 
     username = request.form.get("username", "").strip().lower()
@@ -2280,7 +2529,7 @@ def crear_admin():
 
 
 @app.route("/rifas/admin/admins/toggle/<int:admin_id>", methods=["POST"])
-@admin_required
+@@super_admin_required
 def toggle_admin(admin_id):
 
     db = get_db()
@@ -2331,7 +2580,7 @@ def toggle_admin(admin_id):
 
 
 @app.route("/rifas/admin/admins/eliminar/<int:admin_id>", methods=["POST"])
-@admin_required
+@@super_admin_required
 def eliminar_admin(admin_id):
 
     db = get_db()
