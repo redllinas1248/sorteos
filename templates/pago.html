@@ -250,6 +250,10 @@
             margin-top: 5px;
         }
 
+        /* ============================================
+           MÉTODOS DE PAGO (radio nativo + label for)
+        ============================================ */
+
         .metodos {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
@@ -267,6 +271,7 @@
             border-radius: 15px;
             cursor: pointer;
             transition: 0.2s;
+            position: relative;
         }
 
         .metodo:hover {
@@ -274,7 +279,18 @@
             transform: translateY(-2px);
         }
 
-        .metodo.seleccionado {
+        /* Ocultar el radio visualmente pero mantenerlo funcional */
+        .metodo input[type="radio"] {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+            width: 0;
+            height: 0;
+            margin: 0;
+        }
+
+        /* Estilo de seleccionado usando :has() */
+        .metodo:has(input[type="radio"]:checked) {
             border-color: #8b5cf6;
             background: rgba(139, 92, 246, 0.08);
             box-shadow: 0 6px 20px rgba(139, 92, 246, 0.25);
@@ -520,22 +536,22 @@
 
             <div class="metodos">
 
-                <label class="metodo seleccionado" id="metodo-card">
-                    <input type="radio" name="metodo" value="card" checked style="display:none">
+                <label class="metodo" for="radio-card">
+                    <input type="radio" id="radio-card" name="metodo" value="card" checked>
                     <div class="metodo-icono">💳</div>
                     <div class="metodo-nombre">Tarjeta</div>
                     <div class="metodo-desc">Crédito o débito</div>
                 </label>
 
-                <label class="metodo" id="metodo-oxxo">
-                    <input type="radio" name="metodo" value="oxxo" style="display:none">
+                <label class="metodo" for="radio-oxxo">
+                    <input type="radio" id="radio-oxxo" name="metodo" value="oxxo">
                     <div class="metodo-icono">🏪</div>
                     <div class="metodo-nombre">OXXO</div>
                     <div class="metodo-desc">Efectivo en tienda</div>
                 </label>
 
-                <label class="metodo" id="metodo-efectivo">
-                    <input type="radio" name="metodo" value="efectivo" style="display:none">
+                <label class="metodo" for="radio-efectivo">
+                    <input type="radio" id="radio-efectivo" name="metodo" value="efectivo">
                     <div class="metodo-icono">💵</div>
                     <div class="metodo-nombre">Efectivo</div>
                     <div class="metodo-desc">Al organizador</div>
@@ -576,24 +592,9 @@
 
 <script>
 
-    const metodoCard = document.getElementById('metodo-card');
-    const metodoOxxo = document.getElementById('metodo-oxxo');
-    const metodoEfectivo = document.getElementById('metodo-efectivo');
-
-    const metodos = [metodoCard, metodoOxxo, metodoEfectivo];
-
-    metodos.forEach(function(el) {
-        el.addEventListener('click', function(e) {
-            e.preventDefault();
-            metodos.forEach(function(m) {
-                m.classList.remove('seleccionado');
-                m.querySelector('input').checked = false;
-            });
-            el.classList.add('seleccionado');
-            el.querySelector('input').checked = true;
-        });
-    });
-
+    // ============================================================
+    // CUENTA REGRESIVA
+    // ============================================================
 
     const expiraEn = new Date({{ expira_en_ms or 0 }});
 
@@ -624,6 +625,10 @@
     setInterval(actualizarContador, 1000);
 
 
+    // ============================================================
+    // COPIAR CÓDIGO
+    // ============================================================
+
     function copiarCodigo() {
         const codigo = "{{ boleto.reserva_token }}";
         navigator.clipboard.writeText(codigo).then(function() {
@@ -633,6 +638,10 @@
         });
     }
 
+
+    // ============================================================
+    // SUBMIT DEL FORMULARIO
+    // ============================================================
 
     const form = document.getElementById('formPago');
     const overlay = document.getElementById('overlayPago');
