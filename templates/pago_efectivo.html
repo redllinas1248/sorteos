@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Pago en efectivo - {{ boleto.titulo }}</title>
+
+    <meta name="theme-color" content="#0a0d18">
+    <meta name="color-scheme" content="dark">
+
+    <style>
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #0a0d18;
+            color: #e8ecf4;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        header {
+            background: linear-gradient(135deg, #10b981, #047857);
+            color: white;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.3);
+        }
+
+        header h1 { margin: 0; font-size: 26px; }
+
+        .contenedor {
+            width: 100%;
+            max-width: 620px;
+            margin: 30px auto;
+            padding: 0 15px;
+        }
+
+        .tarjeta {
+            background: #141827;
+            border: 1px solid #232942;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 20px;
+        }
+
+        .icono-grande {
+            text-align: center;
+            font-size: 70px;
+            margin-bottom: 15px;
+        }
+
+        .titulo {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #10b981;
+        }
+
+        .subtitulo {
+            text-align: center;
+            color: #8a93ab;
+            margin-bottom: 25px;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .boleto-info {
+            text-align: center;
+            background: rgba(59, 130, 246, 0.08);
+            border: 2px dashed #3b82f6;
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .boleto-info small {
+            display: block;
+            color: #8a93ab;
+            margin-bottom: 6px;
+            font-size: 12px;
+            letter-spacing: 1px;
+        }
+
+        .boleto-numero {
+            font-size: 32px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .precio-pagar {
+            text-align: center;
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 25px;
+        }
+
+        .precio-pagar small {
+            display: block;
+            color: #8a93ab;
+            font-size: 12px;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+        }
+
+        .precio-pagar .monto {
+            font-size: 32px;
+            font-weight: bold;
+            color: #10b981;
+        }
+
+        .contador-wrap {
+            text-align: center;
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(245, 158, 11, 0.08);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            border-radius: 12px;
+        }
+
+        .contador-label {
+            color: #fbbf24;
+            font-size: 13px;
+            margin-bottom: 6px;
+        }
+
+        .contador {
+            font-size: 26px;
+            font-weight: bold;
+            color: #f59e0b;
+            font-family: 'Courier New', monospace;
+        }
+
+        .contador-expirado { color: #ef4444; }
+
+        .contacto-organizador {
+            background: rgba(139, 92, 246, 0.08);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .contacto-organizador h3 {
+            margin: 0 0 15px;
+            font-size: 15px;
+            color: #a78bfa;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .contacto-linea {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(139, 92, 246, 0.15);
+            gap: 10px;
+        }
+
+        .contacto-linea:last-child { border-bottom: none; }
+
+        .contacto-linea span {
+            color: #8a93ab;
+            font-size: 13px;
+        }
+
+        .contacto-linea strong {
+            color: #e8ecf4;
+            font-size: 14px;
+            text-align: right;
+            word-break: break-word;
+            max-width: 60%;
+        }
+
+        .contacto-linea a {
+            color: #a5b4fc;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .contacto-linea a:hover { color: #8b5cf6; }
+
+        .notas-organizador {
+            margin-top: 15px;
+            padding: 12px;
+            background: #0a0d18;
+            border-radius: 10px;
+            font-size: 13px;
+            color: #8a93ab;
+            line-height: 1.6;
+        }
+
+        .instrucciones {
+            background: rgba(16, 185, 129, 0.08);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .instrucciones h3 {
+            margin: 0 0 15px;
+            font-size: 15px;
+            color: #34d399;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .instrucciones ol {
+            margin: 0;
+            padding-left: 20px;
+            color: #e8ecf4;
+            line-height: 1.9;
+            font-size: 15px;
+        }
+
+        .instrucciones li { margin-bottom: 8px; }
+
+        .instrucciones strong { color: #34d399; }
+
+        .codigo-reserva {
+            background: #0a0d18;
+            border: 1px solid #232942;
+            padding: 18px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .codigo-reserva small {
+            display: block;
+            color: #8a93ab;
+            margin-bottom: 8px;
+            font-size: 12px;
+            letter-spacing: 1px;
+        }
+
+        .codigo-reserva code {
+            color: #a5b4fc;
+            font-weight: bold;
+            font-size: 14px;
+            word-break: break-all;
+            display: block;
+            font-family: 'Courier New', monospace;
+        }
+
+        .btn-copiar {
+            margin-top: 12px;
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 13px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: 0.2s;
+        }
+
+        .btn-copiar:hover { transform: translateY(-1px); }
+
+        .acciones {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 25px;
+        }
+
+        .boton {
+            display: block;
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 15px;
+            border: none;
+            cursor: pointer;
+            font-family: inherit;
+            transition: 0.2s;
+        }
+
+        .boton-primario {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: white;
+            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+        }
+
+        .boton-primario:hover { transform: translateY(-1px); }
+
+        .boton-secundario {
+            background: #1e293b;
+            color: #e8ecf4;
+            border: 1px solid #232942;
+        }
+
+        .boton-secundario:hover { background: #232942; }
+
+        .volver {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #a5b4fc;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .volver:hover { color: #8b5cf6; }
+
+    </style>
+
+</head>
+
+<body>
+
+<header>
+    <h1>💵 Pago en efectivo</h1>
+</header>
+
+
+<div class="contenedor">
+
+    <div class="tarjeta">
+
+        <div class="icono-grande">💵</div>
+
+        <div class="titulo">Boleto reservado</div>
+
+        <div class="subtitulo">
+            Contacta al organizador y paga en efectivo para completar tu participación.
+        </div>
+
+
+        <div class="boleto-info">
+            <small>TU BOLETO</small>
+            <div class="boleto-numero">#{{ boleto.numero }}</div>
+        </div>
+
+
+        <div class="precio-pagar">
+            <small>MONTO A PAGAR</small>
+            <div class="monto">${{ "%.2f"|format(boleto.precio_boleto) }} MXN</div>
+        </div>
+
+
+        <div class="contador-wrap">
+            <div class="contador-label">⏱️ Tiempo restante para pagar</div>
+            <div class="contador" id="contador">--:--</div>
+        </div>
+
+
+        <!-- CONTACTO DEL ORGANIZADOR -->
+        <div class="contacto-organizador">
+
+            <h3>📞 Contacto del organizador</h3>
+
+            {% if boleto.dueno_nombre %}
+                <div class="contacto-linea">
+                    <span>Nombre:</span>
+                    <strong>{{ boleto.dueno_nombre }}</strong>
+                </div>
+            {% endif %}
+
+            {% if boleto.dueno_telefono %}
+                <div class="contacto-linea">
+                    <span>Teléfono:</span>
+                    <a href="tel:{{ boleto.dueno_telefono }}">{{ boleto.dueno_telefono }}</a>
+                </div>
+            {% endif %}
+
+            {% if boleto.dueno_whatsapp %}
+                <div class="contacto-linea">
+                    <span>WhatsApp:</span>
+                    <a href="https://wa.me/52{{ boleto.dueno_whatsapp|replace(' ','')|replace('-','') }}?text=Hola,%20quiero%20pagar%20mi%20boleto%20%23{{ boleto.numero }}%20de%20{{ boleto.titulo }}"
+                       target="_blank">
+                        Enviar mensaje →
+                    </a>
+                </div>
+            {% elif boleto.dueno_telefono %}
+                <div class="contacto-linea">
+                    <span>WhatsApp:</span>
+                    <a href="https://wa.me/52{{ boleto.dueno_telefono|replace(' ','')|replace('-','') }}?text=Hola,%20quiero%20pagar%20mi%20boleto%20%23{{ boleto.numero }}"
+                       target="_blank">
+                        Enviar mensaje →
+                    </a>
+                </div>
+            {% endif %}
+
+            {% if boleto.dueno_notas %}
+                <div class="notas-organizador">
+                    📍 {{ boleto.dueno_notas }}
+                </div>
+            {% endif %}
+
+        </div>
+
+
+        <!-- INSTRUCCIONES -->
+        <div class="instrucciones">
+
+            <h3>📋 Pasos a seguir</h3>
+
+            <ol>
+                <li>
+                    <strong>Contacta al organizador</strong>
+                    usando el teléfono o WhatsApp de arriba.
+                </li>
+                <li>
+                    Acuerden cómo, cuándo y dónde le entregarás el
+                    <strong>pago en efectivo</strong>.
+                </li>
+                <li>
+                    El organizador marcará tu pago como recibido en
+                    su panel de administración.
+                </li>
+                <li>
+                    Cuando esté marcado, podrás <strong>consultar tu
+                    comprobante final</strong> con tu código de participación.
+                </li>
+            </ol>
+
+        </div>
+
+
+        <!-- CÓDIGO -->
+        <div class="codigo-reserva">
+            <small>📌 TU CÓDIGO DE PARTICIPACIÓN</small>
+            <code>{{ boleto.reserva_token }}</code>
+            <button type="button" class="btn-copiar" onclick="copiarCodigo()">
+                📋 Copiar código
+            </button>
+        </div>
+
+
+        <div class="acciones">
+
+            <button onclick="window.print()" class="boton boton-primario">
+                🖨️ Imprimir / Guardar PDF
+            </button>
+
+            <a href="/rifas/consultar" class="boton boton-secundario">
+                🔍 Consultar mi participación
+            </a>
+
+        </div>
+
+    </div>
+
+
+    <a class="volver" href="/rifas">
+        ← Volver a los sorteos
+    </a>
+
+</div>
+
+
+<script>
+
+    // Cuenta regresiva (2 horas)
+    const expiraEn = new Date({{ expira_en_ms or 0 }});
+    const contadorEl = document.getElementById('contador');
+
+    function actualizarContador() {
+        const ahora = new Date();
+        const diff = expiraEn - ahora;
+
+        if (diff <= 0) {
+            contadorEl.textContent = 'Expirado';
+            contadorEl.classList.add('contador-expirado');
+            return;
+        }
+
+        const horas = Math.floor(diff / 3600000);
+        const mins = Math.floor((diff % 3600000) / 60000);
+        const segs = Math.floor((diff % 60000) / 1000);
+
+        if (horas > 0) {
+            contadorEl.textContent = horas + 'h ' +
+                String(mins).padStart(2, '0') + 'm ' +
+                String(segs).padStart(2, '0') + 's';
+        } else {
+            contadorEl.textContent =
+                String(mins).padStart(2, '0') + ':' +
+                String(segs).padStart(2, '0');
+        }
+    }
+
+    actualizarContador();
+    setInterval(actualizarContador, 1000);
+
+
+    function copiarCodigo() {
+        const codigo = "{{ boleto.reserva_token }}";
+        navigator.clipboard.writeText(codigo).then(function() {
+            alert('✅ Código copiado:\n\n' + codigo);
+        }).catch(function() {
+            prompt('Copia tu código:', codigo);
+        });
+    }
+
+</script>
+
+</body>
+
+</html>

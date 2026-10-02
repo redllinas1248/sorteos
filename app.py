@@ -89,6 +89,9 @@ def filtro_mx(dt):
 RESERVA_TTL_MINUTOS = int(os.getenv("RESERVA_TTL_MINUTOS", "30"))
 
 
+# TTL especial para pagos en efectivo (2 horas por defecto)
+EFECTIVO_TTL_MINUTOS = int(os.getenv("EFECTIVO_TTL_MINUTOS", "120"))
+
 # ============================================================
 # CREDENCIALES DE ADMINISTRACIÓN
 # ============================================================
@@ -166,7 +169,13 @@ def liberar_reservas_expiradas(db):
 
     cursor = db.cursor()
 
-    cutoff = datetime.now() - timedelta(minutes=RESERVA_TTL_MINUTOS)
+    total_liberados = 0
+
+    # --------------------------------------------------------
+    # 1. Reservas normales (Tarjeta / OXXO): 30 min
+    # --------------------------------------------------------
+
+    cutoff_normal = datetime.now() - timedelta(minutes=RESERVA_TTL_MINUTOS)
 
     cursor.execute("""
         SELECT id
@@ -175,30 +184,68 @@ def liberar_reservas_expiradas(db):
             estado = 'reservado'
             AND reservado_en IS NOT NULL
             AND reservado_en < %s
+            AND (metodo_pago IS NULL OR metodo_pago != 'efectivo')
             AND NOT (
                 metodo_pago = 'oxxo'
                 AND stripe_session_id IS NOT NULL
             )
-    """, (cutoff,))
+    """, (cutoff_normal,))
 
-    ids = [f["id"] for f in cursor.fetchall()]
+    ids_normal = [f["id"] for f in cursor.fetchall()]
 
-    if not ids:
-        return 0
+    if ids_normal:
+
+        cursor.execute("""
+            UPDATE sp_boletos
+            SET
+                estado = 'disponible',
+                reserva_token = NULL,
+                reservado_en = NULL,
+                nombre = NULL,
+                numero_especial = NULL,
+                metodo_pago = NULL,
+                actualizado_en = NOW()
+            WHERE id = ANY(%s)
+        """, (ids_normal,))
+
+        total_liberados += len(ids_normal)
+
+    # --------------------------------------------------------
+    # 2. Reservas en efectivo: 2 horas
+    # --------------------------------------------------------
+
+    cutoff_efectivo = datetime.now() - timedelta(minutes=EFECTIVO_TTL_MINUTOS)
 
     cursor.execute("""
-        UPDATE sp_boletos
-        SET
-            estado = 'disponible',
-            reserva_token = NULL,
-            reservado_en = NULL,
-            nombre = NULL,
-            numero_especial = NULL,
-            actualizado_en = NOW()
-        WHERE id = ANY(%s)
-    """, (ids,))
+        SELECT id
+        FROM sp_boletos
+        WHERE
+            estado = 'reservado'
+            AND reservado_en IS NOT NULL
+            AND reservado_en < %s
+            AND metodo_pago = 'efectivo'
+    """, (cutoff_efectivo,))
 
-    return len(ids)
+    ids_efectivo = [f["id"] for f in cursor.fetchall()]
+
+    if ids_efectivo:
+
+        cursor.execute("""
+            UPDATE sp_boletos
+            SET
+                estado = 'disponible',
+                reserva_token = NULL,
+                reservado_en = NULL,
+                nombre = NULL,
+                numero_especial = NULL,
+                metodo_pago = NULL,
+                actualizado_en = NOW()
+            WHERE id = ANY(%s)
+        """, (ids_efectivo,))
+
+        total_liberados += len(ids_efectivo)
+
+    return total_liberados
 
 
 # ============================================================
@@ -627,6 +674,59 @@ def iniciar_pago(reserva_token):
             WHERE id = %s
         """, (nombre, numero_especial, metodo, boleto["id"]))
 
+
+                # ----------------------------------------------------
+        # Si el método es EFECTIVO: no va a Stripe
+        # ----------------------------------------------------
+
+        if metodo == "efectivo":
+
+            # Verificar que el dueño tenga al menos un teléfono
+            cursor.execute("""
+                SELECT
+                    a.nombre,
+                    a.telefono,
+                    a.whatsapp
+                FROM sp_rifas r
+                LEFT JOIN sp_admins a ON a.propietario_slug = r.propietario_slug
+                WHERE r.id = %s
+            """, (boleto["rifa_id"],))
+
+            dueno = cursor.fetchone()
+
+            if not dueno or (not dueno["telefono"] and not dueno["whatsapp"]):
+
+                flash(
+                    "Este sorteo no tiene pago en efectivo habilitado "
+                    "(el organizador no registró teléfono).",
+                    "error"
+                )
+
+                return redirect(
+                    url_for("pago", reserva_token=reserva_token)
+                )
+
+            # Actualizar boleto con método efectivo
+            cursor.execute("""
+                UPDATE sp_boletos
+                SET
+                    nombre = %s,
+                    numero_especial = %s,
+                    metodo_pago = 'efectivo',
+                    actualizado_en = NOW()
+                WHERE id = %s
+            """, (
+                nombre,
+                numero_especial,
+                boleto["id"]
+            ))
+
+            db.commit()
+
+            return redirect(
+                url_for("pago_efectivo", reserva_token=reserva_token)
+            )
+
         # ----------------------------------------------------
         # Crear sesión de Stripe
         # ----------------------------------------------------
@@ -727,6 +827,10 @@ def pago_exito(reserva_token):
 
             return redirect(url_for("rifas"))
 
+
+
+
+
         # ----------------------------------------------------
         # Si el pago NO está confirmado (OXXO) → pendiente
         # ----------------------------------------------------
@@ -761,6 +865,99 @@ def pago_exito(reserva_token):
 
         return redirect(
             url_for("tarjeta_participacion", reserva_token=reserva_token)
+        )
+
+    finally:
+
+        db.close()
+
+
+# ============================================================
+# PANTALLA DE PAGO EN EFECTIVO
+#
+# El boleto queda reservado por 2 horas.
+# El usuario contacta al dueño, paga en efectivo,
+# y el dueño marca el boleto como pagado.
+# ============================================================
+
+@app.route("/rifas/pago/<reserva_token>/efectivo")
+def pago_efectivo(reserva_token):
+
+    db = get_db()
+
+    try:
+
+        cursor = db.cursor()
+
+        cursor.execute("""
+            SELECT
+                b.id,
+                b.rifa_id,
+                b.numero,
+                b.estado,
+                b.reserva_token,
+                b.reservado_en,
+                b.nombre,
+                b.numero_especial,
+                b.metodo_pago,
+                b.pagado_en,
+                b.monto_pagado,
+                r.titulo,
+                r.descripcion,
+                r.imagen_url,
+                r.precio_boleto,
+                r.propietario_slug,
+                a.nombre AS dueno_nombre,
+                a.telefono AS dueno_telefono,
+                a.whatsapp AS dueno_whatsapp,
+                a.notas_contacto AS dueno_notas
+            FROM sp_boletos b
+            INNER JOIN sp_rifas r ON r.id = b.rifa_id
+            LEFT JOIN sp_admins a ON a.propietario_slug = r.propietario_slug
+            WHERE b.reserva_token = %s
+        """, (reserva_token,))
+
+        boleto = cursor.fetchone()
+
+        if not boleto:
+
+            flash("La reserva no existe.", "error")
+
+            return redirect(url_for("rifas"))
+
+        # Si ya está pagado, ir a la tarjeta final
+        if boleto["estado"] in ("asignado", "pagado"):
+
+            return redirect(
+                url_for("tarjeta_participacion", reserva_token=reserva_token)
+            )
+
+        # Si no es efectivo, redirigir a la pantalla normal
+        if boleto["metodo_pago"] != "efectivo":
+
+            return redirect(
+                url_for("pago", reserva_token=reserva_token)
+            )
+
+        # Calcular expiración (2 horas desde reservado_en)
+        expira_en_ms = None
+
+        if boleto["reservado_en"]:
+
+            reservado_utc = boleto["reservado_en"].replace(
+                tzinfo=timezone.utc
+            )
+
+            expira_en = reservado_utc + timedelta(
+                minutes=EFECTIVO_TTL_MINUTOS
+            )
+
+            expira_en_ms = int(expira_en.timestamp() * 1000)
+
+        return render_template(
+            "pago_efectivo.html",
+            boleto=boleto,
+            expira_en_ms=expira_en_ms
         )
 
     finally:
@@ -826,6 +1023,8 @@ def pago_pendiente(reserva_token):
     finally:
 
         db.close()
+
+
 
 
 # ============================================================

@@ -97,10 +97,6 @@
             line-height: 1;
         }
 
-        /* ============================================
-           PRECIO
-        ============================================ */
-
         .precio-wrap {
             text-align: center;
             margin: 25px 0;
@@ -125,10 +121,6 @@
             line-height: 1;
         }
 
-        /* ============================================
-           CUENTA REGRESIVA
-        ============================================ */
-
         .contador-wrap {
             text-align: center;
             margin: 20px 0;
@@ -151,13 +143,7 @@
             font-family: 'Courier New', monospace;
         }
 
-        .contador-expirado {
-            color: #ef4444;
-        }
-
-        /* ============================================
-           CÓDIGO DE PARTICIPACIÓN (visible antes del pago)
-        ============================================ */
+        .contador-expirado { color: #ef4444; }
 
         .codigo-previo {
             background: rgba(59, 130, 246, 0.08);
@@ -216,13 +202,7 @@
             line-height: 1.5;
         }
 
-        .aviso-codigo strong {
-            color: #fbbf24;
-        }
-
-        /* ============================================
-           TITULOS DE SECCIÓN
-        ============================================ */
+        .aviso-codigo strong { color: #fbbf24; }
 
         .titulo-seccion {
             text-align: center;
@@ -233,13 +213,7 @@
             border-top: 1px solid #232942;
         }
 
-        /* ============================================
-           CAMPOS DE FORMULARIO
-        ============================================ */
-
-        .campo {
-            margin-bottom: 18px;
-        }
+        .campo { margin-bottom: 18px; }
 
         .campo label {
             display: block;
@@ -261,9 +235,7 @@
             transition: 0.2s;
         }
 
-        .campo input::placeholder {
-            color: #4b5563;
-        }
+        .campo input::placeholder { color: #4b5563; }
 
         .campo input:focus {
             outline: none;
@@ -278,14 +250,10 @@
             margin-top: 5px;
         }
 
-        /* ============================================
-           MÉTODOS DE PAGO
-        ============================================ */
-
         .metodos {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 12px;
             margin-bottom: 20px;
         }
 
@@ -293,7 +261,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 20px 15px;
+            padding: 18px 10px;
             background: #0a0d18;
             border: 2px solid #232942;
             border-radius: 15px;
@@ -313,27 +281,23 @@
         }
 
         .metodo-icono {
-            font-size: 40px;
-            margin-bottom: 10px;
+            font-size: 34px;
+            margin-bottom: 8px;
         }
 
         .metodo-nombre {
             font-weight: bold;
-            font-size: 15px;
+            font-size: 14px;
             color: #e8ecf4;
-            margin-bottom: 5px;
+            margin-bottom: 4px;
         }
 
         .metodo-desc {
-            font-size: 12px;
+            font-size: 11px;
             color: #8a93ab;
             text-align: center;
-            line-height: 1.4;
+            line-height: 1.3;
         }
-
-        /* ============================================
-           BOTÓN PAGAR
-        ============================================ */
 
         .boton-pagar {
             width: 100%;
@@ -395,10 +359,6 @@
             margin-bottom: 20px;
             text-align: center;
         }
-
-        /* ============================================
-           OVERLAY DE CARGA
-        ============================================ */
 
         .overlay-pago {
             position: fixed;
@@ -489,23 +449,17 @@
         </div>
 
 
-        <!-- PRECIO -->
         <div class="precio-wrap">
             <div class="precio-label">Total a pagar</div>
             <div class="precio">${{ "%.2f"|format(boleto.precio_boleto) }} MXN</div>
         </div>
 
 
-        <!-- CUENTA REGRESIVA -->
         <div class="contador-wrap">
             <div class="contador-label">⏱️ Tiempo restante para completar el pago</div>
             <div class="contador" id="contador">--:--</div>
         </div>
 
-
-        <!-- ============================================
-             CÓDIGO DE PARTICIPACIÓN (visible antes del pago)
-        ============================================= -->
 
         <div class="codigo-previo">
 
@@ -519,19 +473,13 @@
 
             <p class="aviso-codigo">
                 ⚠️ <strong>Guarda este código</strong> antes de pagar.
-                Lo necesitarás para consultar tu participación
-                (especialmente si pagas en OXXO).
+                Lo necesitarás para consultar tu participación.
             </p>
 
         </div>
 
 
-        <!-- FORMULARIO -->
         <form id="formPago" method="POST" action="/rifas/pago/{{ boleto.reserva_token }}/checkout">
-
-            <!-- ============================================
-                 DATOS DEL PARTICIPANTE
-            ============================================= -->
 
             <div class="titulo-seccion">📝 Tus datos</div>
 
@@ -568,10 +516,6 @@
             </div>
 
 
-            <!-- ============================================
-                 MÉTODO DE PAGO
-            ============================================= -->
-
             <div class="titulo-seccion">💳 Elige tu método de pago</div>
 
             <div class="metodos">
@@ -580,14 +524,21 @@
                     <input type="radio" name="metodo" value="card" checked style="display:none">
                     <div class="metodo-icono">💳</div>
                     <div class="metodo-nombre">Tarjeta</div>
-                    <div class="metodo-desc">Crédito o débito<br>Pago inmediato</div>
+                    <div class="metodo-desc">Crédito o débito</div>
                 </label>
 
                 <label class="metodo" id="metodo-oxxo">
                     <input type="radio" name="metodo" value="oxxo" style="display:none">
                     <div class="metodo-icono">🏪</div>
                     <div class="metodo-nombre">OXXO</div>
-                    <div class="metodo-desc">Paga en efectivo<br>En cualquier OXXO</div>
+                    <div class="metodo-desc">Efectivo en tienda</div>
+                </label>
+
+                <label class="metodo" id="metodo-efectivo">
+                    <input type="radio" name="metodo" value="efectivo" style="display:none">
+                    <div class="metodo-icono">💵</div>
+                    <div class="metodo-nombre">Efectivo</div>
+                    <div class="metodo-desc">Al organizador</div>
                 </label>
 
             </div>
@@ -602,8 +553,8 @@
 
         <div class="advertencia">
             <strong>⏱️ Importante:</strong>
-            Tu boleto está reservado por <strong>{{ minutos_restantes }} minutos</strong>.
-            Si no completas el pago en ese tiempo, el boleto se liberará automáticamente.
+            Tu boleto está reservado por <strong>{{ minutos_restantes }} minutos</strong>
+            (o 2 horas si eliges efectivo).
         </div>
 
     </div>
@@ -616,43 +567,33 @@
 </div>
 
 
-<!-- OVERLAY DE CARGA -->
 <div class="overlay-pago" id="overlayPago">
     <div class="spinner"></div>
-    <h3>⏳ Redirigiendo a la pasarela de pago...</h3>
+    <h3>⏳ Procesando...</h3>
     <p>Por favor no cierres esta ventana.</p>
 </div>
 
 
 <script>
 
-    // ============================================================
-    // SELECCIÓN DE MÉTODO DE PAGO
-    // ============================================================
-
     const metodoCard = document.getElementById('metodo-card');
     const metodoOxxo = document.getElementById('metodo-oxxo');
-    const inputCard = metodoCard.querySelector('input');
-    const inputOxxo = metodoOxxo.querySelector('input');
+    const metodoEfectivo = document.getElementById('metodo-efectivo');
 
-    metodoCard.addEventListener('click', function(e) {
-        e.preventDefault();
-        metodoCard.classList.add('seleccionado');
-        metodoOxxo.classList.remove('seleccionado');
-        inputCard.checked = true;
+    const metodos = [metodoCard, metodoOxxo, metodoEfectivo];
+
+    metodos.forEach(function(el) {
+        el.addEventListener('click', function(e) {
+            e.preventDefault();
+            metodos.forEach(function(m) {
+                m.classList.remove('seleccionado');
+                m.querySelector('input').checked = false;
+            });
+            el.classList.add('seleccionado');
+            el.querySelector('input').checked = true;
+        });
     });
 
-    metodoOxxo.addEventListener('click', function(e) {
-        e.preventDefault();
-        metodoOxxo.classList.add('seleccionado');
-        metodoCard.classList.remove('seleccionado');
-        inputOxxo.checked = true;
-    });
-
-
-    // ============================================================
-    // CUENTA REGRESIVA
-    // ============================================================
 
     const expiraEn = new Date({{ expira_en_ms or 0 }});
 
@@ -660,7 +601,6 @@
     const btnPagar = document.getElementById('btnPagar');
 
     function actualizarContador() {
-
         const ahora = new Date();
         const diff = expiraEn - ahora;
 
@@ -678,70 +618,62 @@
         contadorEl.textContent =
             String(mins).padStart(2, '0') + ':' +
             String(segs).padStart(2, '0');
-
     }
 
     actualizarContador();
     setInterval(actualizarContador, 1000);
 
 
-    // ============================================================
-    // COPIAR CÓDIGO DE PARTICIPACIÓN
-    // ============================================================
-
     function copiarCodigo() {
-
         const codigo = "{{ boleto.reserva_token }}";
-
         navigator.clipboard.writeText(codigo).then(function() {
-
-            alert(
-                '✅ Código copiado al portapapeles:\n\n' +
-                codigo +
-                '\n\nGuárdalo en un lugar seguro.'
-            );
-
+            alert('✅ Código copiado:\n\n' + codigo + '\n\nGuárdalo.');
         }).catch(function() {
-
-            prompt('Copia tu código manualmente:', codigo);
-
+            prompt('Copia tu código:', codigo);
         });
-
     }
 
-
-    // ============================================================
-    // SUBMIT DEL FORMULARIO
-    // ============================================================
 
     const form = document.getElementById('formPago');
     const overlay = document.getElementById('overlayPago');
 
     form.addEventListener('submit', function(e) {
 
-        // Si elige OXXO, mostrar confirmación con aviso
         const metodoSeleccionado = document.querySelector('input[name="metodo"]:checked').value;
 
-        if (metodoSeleccionado === 'oxxo') {
+        let mensaje = '';
 
-            const confirmar = confirm(
+        if (metodoSeleccionado === 'oxxo') {
+            mensaje =
                 '📌 IMPORTANTE\n\n' +
                 'Vas a generar un voucher de OXXO.\n\n' +
-                '1. GUARDA tu código de participación (arriba de este formulario).\n' +
-                '2. Imprime o guarda el voucher de Stripe.\n' +
+                '1. GUARDA tu código de participación.\n' +
+                '2. Imprime o guarda el voucher.\n' +
                 '3. Paga en cualquier OXXO.\n' +
-                '4. Regresa a la sección "Consultar" con tu código.\n\n' +
-                '¿Ya guardaste tu código?'
-            );
+                '4. Regresa a "Consultar" con tu código.\n\n' +
+                '¿Ya guardaste tu código?';
+        } else if (metodoSeleccionado === 'efectivo') {
+            mensaje =
+                '💵 PAGO EN EFECTIVO\n\n' +
+                'Vas a reservar el boleto para pagarlo en efectivo al organizador de la rifa.\n\n' +
+                '1. GUARDA tu código de participación.\n' +
+                '2. Contacta al organizador con los datos que verás en la siguiente pantalla.\n' +
+                '3. Paga en efectivo.\n' +
+                '4. El organizador marcará tu pago como recibido.\n' +
+                '5. Podrás consultar tu comprobante con tu código.\n\n' +
+                'Tienes 2 HORAS para pagar.\n\n' +
+                '¿Ya guardaste tu código?';
+        }
 
-            if (!confirmar) {
+        if (mensaje) {
+            if (!confirm(mensaje)) {
                 e.preventDefault();
                 return;
             }
         }
 
         btnPagar.disabled = true;
-        btnPagar.textContent = '⏳ Redirigiendo...';
+        btnPagar.textContent = '⏳ Procesando...';
         overlay.classList.add('activo');
 
     });
