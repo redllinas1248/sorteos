@@ -585,43 +585,35 @@ def pago(reserva_token):
 def iniciar_pago(reserva_token):
 
     # ----------------------------------------------------
-    # Capturar datos del formulario
+    # 1. Capturar datos del formulario
     # ----------------------------------------------------
 
     nombre = request.form.get("nombre", "").strip()
     numero_especial = request.form.get("numero_especial", "").strip() or None
     metodo = request.form.get("metodo", "card")
 
-    if metodo not in ("card", "oxxo"):
+    if metodo not in ("card", "oxxo", "efectivo"):
         metodo = "card"
 
     # ----------------------------------------------------
-    # Validaciones
+    # 2. Validaciones
     # ----------------------------------------------------
 
     if not nombre:
-
         flash("El nombre es obligatorio.", "error")
-
-        return redirect(
-            url_for("pago", reserva_token=reserva_token)
-        )
+        return redirect(url_for("pago", reserva_token=reserva_token))
 
     if len(nombre) > 200:
-
         flash("El nombre es demasiado largo (máximo 200 caracteres).", "error")
-
-        return redirect(
-            url_for("pago", reserva_token=reserva_token)
-        )
+        return redirect(url_for("pago", reserva_token=reserva_token))
 
     if numero_especial and len(numero_especial) > 50:
-
         flash("El número especial es demasiado largo.", "error")
+        return redirect(url_for("pago", reserva_token=reserva_token))
 
-        return redirect(
-            url_for("pago", reserva_token=reserva_token)
-        )
+    # ----------------------------------------------------
+    # 3. Abrir DB y buscar boleto
+    # ----------------------------------------------------
 
     db = get_db()
 
@@ -647,37 +639,16 @@ def iniciar_pago(reserva_token):
         boleto = cursor.fetchone()
 
         if not boleto:
-
             flash("Reserva no encontrada.", "error")
-
             return redirect(url_for("rifas"))
 
         if boleto["estado"] != "reservado":
-
             flash("Esta reserva ya no puede pagarse.", "error")
+            return redirect(url_for("pago", reserva_token=reserva_token))
 
-            return redirect(
-                url_for("pago", reserva_token=reserva_token)
-            )
-
-        # ----------------------------------------------------
-        # Guardar datos en el boleto
-        # ----------------------------------------------------
-
-        cursor.execute("""
-            UPDATE sp_boletos
-            SET
-                nombre = %s,
-                numero_especial = %s,
-                metodo_pago = %s,
-                actualizado_en = NOW()
-            WHERE id = %s
-        """, (nombre, numero_especial, metodo, boleto["id"]))
-
-
-                # ----------------------------------------------------
-        # Si el método es EFECTIVO: no va a Stripe
-        # ----------------------------------------------------
+        # ====================================================
+        # 4. BLOQUE DE EFECTIVO (ANTES de Stripe)
+        # ====================================================
 
         if metodo == "efectivo":
 
@@ -696,6 +667,8 @@ def iniciar_pago(reserva_token):
 
             if not dueno or (not dueno["telefono"] and not dueno["whatsapp"]):
 
+                db.rollback()
+
                 flash(
                     "Este sorteo no tiene pago en efectivo habilitado "
                     "(el organizador no registró teléfono).",
@@ -706,7 +679,7 @@ def iniciar_pago(reserva_token):
                     url_for("pago", reserva_token=reserva_token)
                 )
 
-            # Actualizar boleto con método efectivo
+            # Guardar datos con método efectivo
             cursor.execute("""
                 UPDATE sp_boletos
                 SET
@@ -727,10 +700,22 @@ def iniciar_pago(reserva_token):
                 url_for("pago_efectivo", reserva_token=reserva_token)
             )
 
-        # ----------------------------------------------------
-        # Crear sesión de Stripe
-        # ----------------------------------------------------
+        # ====================================================
+        # 5. Métodos que van a Stripe (Tarjeta / OXXO)
+        # ====================================================
 
+        # Guardar datos en el boleto
+        cursor.execute("""
+            UPDATE sp_boletos
+            SET
+                nombre = %s,
+                numero_especial = %s,
+                metodo_pago = %s,
+                actualizado_en = NOW()
+            WHERE id = %s
+        """, (nombre, numero_especial, metodo, boleto["id"]))
+
+        # Crear sesión de Stripe
         base_url = request.url_root.rstrip("/")
 
         checkout_session = stripe.checkout.Session.create(
@@ -792,7 +777,6 @@ def iniciar_pago(reserva_token):
     finally:
 
         db.close()
-
 
 # ============================================================
 # PAGO EXITOSO (redirect de Stripe)
