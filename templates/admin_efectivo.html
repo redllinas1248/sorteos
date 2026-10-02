@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reservas en efectivo</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: Arial, sans-serif; background: #0a0d18; color: #e8ecf4; }
+        header { background: #141827; border-bottom: 1px solid #232942; padding: 20px; }
+        header .contenedor { max-width: 1200px; margin: auto; display: flex; justify-content: space-between; align-items: center; gap: 15px; flex-wrap: wrap; }
+        header h1 { margin: 0; font-size: 22px; }
+        main { max-width: 1200px; margin: 30px auto; padding: 20px; }
+        .boton { display: inline-block; padding: 11px 16px; border: none; border-radius: 9px; text-decoration: none; font-weight: bold; cursor: pointer; font-size: 14px; color: white; }
+        .boton-volver { background: #1e293b; border: 1px solid #232942; }
+        .boton-cerrar { background: #4b5563; }
+        .boton-toggle { background: #10b981; }
+        .boton-eliminar { background: #dc2626; }
+        .tabla-contenedor { background: #141827; border: 1px solid #232942; border-radius: 15px; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 900px; }
+        th, td { padding: 14px; text-align: left; border-bottom: 1px solid #232942; vertical-align: middle; }
+        th { background: #0a0d18; font-size: 12px; color: #8a93ab; text-transform: uppercase; letter-spacing: 0.5px; }
+        td { font-size: 14px; }
+        .numero { font-weight: bold; color: #60a5fa; font-size: 16px; }
+        .nombre { font-weight: bold; color: #e8ecf4; }
+        .slug { display: inline-block; background: rgba(139, 92, 246, 0.15); color: #a78bfa; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+        .dueno { color: #a78bfa; font-weight: bold; font-size: 13px; }
+        .fecha { white-space: nowrap; color: #8a93ab; font-size: 13px; }
+        .acciones { display: flex; flex-wrap: wrap; gap: 7px; }
+        .acciones form { margin: 0; }
+        .vacio { text-align: center; padding: 60px 20px; color: #8a93ab; }
+        .vacio h2 { color: #e8ecf4; }
+        .flash { padding: 14px 18px; border-radius: 10px; margin-bottom: 20px; font-weight: bold; }
+        .flash.success { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+        .flash.error { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .contador-inline { font-family: 'Courier New', monospace; font-weight: bold; color: #fbbf24; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="contenedor">
+        <h1>💵 Reservas en efectivo (todos los usuarios)</h1>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <a href="{{ url_for('admin_rifas') }}" class="boton boton-volver">← Panel principal</a>
+            <a href="{{ url_for('admin_logout') }}" class="boton boton-cerrar">Cerrar Sesión</a>
+        </div>
+    </div>
+</header>
+
+<main>
+
+    {% with mensajes = get_flashed_messages(with_categories=true) %}
+        {% if mensajes %}
+            {% for categoria, mensaje in mensajes %}
+                <div class="flash {{ categoria }}">{{ mensaje }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    {% if reservas %}
+        <div class="tabla-contenedor">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Boleto</th>
+                        <th>Comprador</th>
+                        <th>N° especial</th>
+                        <th>Sorteo</th>
+                        <th>Dueño</th>
+                        <th>Reservado</th>
+                        <th>Tiempo restante</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in reservas %}
+                        <tr>
+                            <td><span class="numero">#{{ "%03d"|format(r.numero) }}</span></td>
+                            <td><span class="nombre">{{ r.nombre or '—' }}</span></td>
+                            <td>
+                                {% if r.numero_especial %}
+                                    <span class="slug">{{ r.numero_especial }}</span>
+                                {% else %}
+                                    <span style="color: #4b5563;">—</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div>{{ r.titulo }}</div>
+                                <div style="color: #8a93ab; font-size: 12px;">
+                                    ${{ "%.2f"|format(r.precio_boleto) }}
+                                </div>
+                            </td>
+                            <td><span class="dueno">{{ r.dueno_nombre }}</span></td>
+                            <td class="fecha">
+                                {{ (r.reservado_en | mx).strftime('%d/%m %H:%M') if r.reservado_en else '—' }}
+                            </td>
+                            <td>
+                                <span class="contador-inline"
+                                      data-reservado="{{ r.reservado_en.isoformat() if r.reservado_en else '' }}">
+                                    Calculando...
+                                </span>
+                            </td>
+                            <td>
+                                <div class="acciones">
+                                    <form method="POST" action="{{ url_for('marcar_pagado_efectivo', boleto_id=r.id) }}"
+                                          onsubmit="return confirm('¿Marcar boleto #{{ r.numero }} como pagado?');">
+                                        <button type="submit" class="boton boton-toggle">✅ Marcar pagado</button>
+                                    </form>
+                                    <form method="POST" action="{{ url_for('cancelar_reserva_efectivo', boleto_id=r.id) }}"
+                                          onsubmit="return confirm('¿Cancelar reserva del boleto #{{ r.numero }}?');">
+                                        <button type="submit" class="boton boton-eliminar">❌</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <script>
+            document.querySelectorAll('.contador-inline').forEach(function(el) {
+                const reservadoStr = el.dataset.reservado;
+                if (!reservadoStr) { el.textContent = '—'; return; }
+
+                const reservado = new Date(reservadoStr + 'Z');
+                const expira = new Date(reservado.getTime() + 120 * 60 * 1000);
+
+                function tick() {
+                    const diff = expira - new Date();
+                    if (diff <= 0) {
+                        el.textContent = '⏰ Expirado';
+                        el.style.color = '#ef4444';
+                        return;
+                    }
+                    const h = Math.floor(diff / 3600000);
+                    const m = Math.floor((diff % 3600000) / 60000);
+                    const s = Math.floor((diff % 60000) / 1000);
+                    el.textContent = h + 'h ' + String(m).padStart(2, '0') + 'm ' + String(s).padStart(2, '0') + 's';
+                }
+                tick();
+                setInterval(tick, 1000);
+            });
+        </script>
+
+    {% else %}
+        <div class="tabla-contenedor">
+            <div class="vacio">
+                <h2>💵 No hay reservas en efectivo pendientes</h2>
+                <p>Cuando alguien reserve un boleto para pagar en efectivo, aparecerá aquí.</p>
+            </div>
+        </div>
+    {% endif %}
+
+</main>
+
+</body>
+</html>

@@ -61,12 +61,11 @@
 </head>
 <body>
 
-<header>
-    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+<div style="display: flex; gap: 10px; flex-wrap: wrap;">
+    <a href="{{ url_for('admin_efectivo') }}" class="boton" style="background: #10b981; color: white;">💵 Reservas en efectivo</a>
     <a href="{{ url_for('admin_usuarios') }}" class="boton" style="background: #8b5cf6; color: white;">👥 Usuarios</a>
     <a href="{{ url_for('admin_logout') }}" class="boton boton-salir">Cerrar Sesión</a>
 </div>
-</header>
 
 <main>
 

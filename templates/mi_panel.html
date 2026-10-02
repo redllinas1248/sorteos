@@ -77,6 +77,132 @@
         ℹ️ Este es tu panel personal. Aquí ves las estadísticas de tus sorteos. Si tienes dudas, contacta al administrador.
     </div>
 
+
+    <!-- ==========================================
+         RESERVAS PENDIENTES EN EFECTIVO
+         ========================================== -->
+
+    {% if reservas_pendientes %}
+
+        <h2>💵 Reservas pendientes de pago en efectivo</h2>
+
+        <div class="info-box" style="background: rgba(16, 185, 129, 0.08); border-color: rgba(16, 185, 129, 0.3); color: #34d399;">
+            <strong>ℹ️ ¿Qué es esto?</strong><br>
+            Los siguientes compradores reservaron un boleto para pagarte en efectivo.
+            Cuando te entreguen el dinero, toca <strong>"✅ Marcar como pagado"</strong>.
+        </div>
+
+        <div class="tabla-contenedor" style="margin-bottom: 40px;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Boleto</th>
+                        <th>Comprador</th>
+                        <th>N° especial</th>
+                        <th>Sorteo</th>
+                        <th>Reservado</th>
+                        <th>Tiempo restante</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in reservas_pendientes %}
+                        <tr>
+                            <td>
+                                <span class="username" style="font-size: 16px; color: #60a5fa;">
+                                    #{{ "%03d"|format(r.numero) }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="nombre">{{ r.nombre or '—' }}</span>
+                            </td>
+                            <td>
+                                {% if r.numero_especial %}
+                                    <span class="slug">{{ r.numero_especial }}</span>
+                                {% else %}
+                                    <span style="color: #4b5563;">—</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div style="font-size: 13px;">{{ r.titulo }}</div>
+                                <div style="color: #8a93ab; font-size: 12px;">
+                                    ${{ "%.2f"|format(r.precio_boleto) }}
+                                </div>
+                            </td>
+                            <td class="fecha">
+                                {% if r.reservado_en %}
+                                    {{ (r.reservado_en | mx).strftime('%d/%m %H:%M') }}
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="contador-inline"
+                                      data-reservado="{{ r.reservado_en.isoformat() if r.reservado_en else '' }}">
+                                    Calculando...
+                                </span>
+                            </td>
+                            <td>
+                                <div class="acciones">
+                                    <form method="POST" action="{{ url_for('marcar_pagado_efectivo', boleto_id=r.id) }}"
+                                          onsubmit="return confirm('¿Confirmas que el comprador te pagó en efectivo el boleto #{{ r.numero }}?');">
+                                        <button type="submit" class="boton boton-toggle activar" style="background: #10b981;">
+                                            ✅ Marcar como pagado
+                                        </button>
+                                    </form>
+                                    <form method="POST" action="{{ url_for('cancelar_reserva_efectivo', boleto_id=r.id) }}"
+                                          onsubmit="return confirm('¿Cancelar la reserva del boleto #{{ r.numero }}? El boleto volverá a estar disponible.');">
+                                        <button type="submit" class="boton boton-eliminar">
+                                            ❌ Cancelar
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <script>
+            // Cuenta regresiva en vivo para cada reserva (2 horas)
+            document.querySelectorAll('.contador-inline').forEach(function(el) {
+                const reservadoStr = el.dataset.reservado;
+                if (!reservadoStr) {
+                    el.textContent = '—';
+                    return;
+                }
+
+                const reservado = new Date(reservadoStr + 'Z'); // forzar UTC
+                const expira = new Date(reservado.getTime() + 120 * 60 * 1000);
+
+                function tick() {
+                    const ahora = new Date();
+                    const diff = expira - ahora;
+
+                    if (diff <= 0) {
+                        el.textContent = '⏰ Expirado';
+                        el.style.color = '#ef4444';
+                        return;
+                    }
+
+                    const h = Math.floor(diff / 3600000);
+                    const m = Math.floor((diff % 3600000) / 60000);
+                    const s = Math.floor((diff % 60000) / 1000);
+
+                    el.textContent = h + 'h ' +
+                        String(m).padStart(2, '0') + 'm ' +
+                        String(s).padStart(2, '0') + 's';
+                }
+
+                tick();
+                setInterval(tick, 1000);
+            });
+        </script>
+
+    {% endif %}
+
+
     <!-- ==========================================
          ESTADÍSTICAS GLOBALES
          ========================================== -->

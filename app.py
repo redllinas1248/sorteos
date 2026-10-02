@@ -1705,6 +1705,50 @@ def admin_participantes(rifa_id):
 
 
 # ============================================================
+# SUPER ADMIN: RESERVAS EN EFECTIVO DE TODOS LOS DUEÑOS
+# ============================================================
+
+@app.route("/rifas/admin/efectivo")
+@super_admin_required
+def admin_efectivo():
+
+    db = get_db()
+
+    try:
+
+        cursor = db.cursor()
+
+        cursor.execute("""
+            SELECT
+                b.id,
+                b.numero,
+                b.nombre,
+                b.numero_especial,
+                b.reservado_en,
+                r.titulo,
+                r.propietario_slug,
+                r.precio_boleto,
+                COALESCE(a.nombre, 'Admin') AS dueno_nombre
+            FROM sp_boletos b
+            INNER JOIN sp_rifas r ON r.id = b.rifa_id
+            LEFT JOIN sp_admins a ON a.propietario_slug = r.propietario_slug
+            WHERE b.estado = 'reservado'
+              AND b.metodo_pago = 'efectivo'
+            ORDER BY b.reservado_en ASC
+        """)
+
+        reservas = cursor.fetchall()
+
+        return render_template(
+            "admin_efectivo.html",
+            reservas=reservas
+        )
+
+    finally:
+
+        db.close()
+
+# ============================================================
 # LIBERAR BOLETO MANUALMENTE
 # ============================================================
 
@@ -1786,6 +1830,269 @@ def admin_liberar_boleto(boleto_id):
         flash("Ocurrió un error al liberar el boleto.", "error")
 
         return redirect(url_for("admin_rifas"))
+
+    finally:
+
+        db.close()
+
+
+# ============================================================
+# MARCAR RESERVA EN EFECTIVO COMO PAGADA
+#
+# Solo el dueño de la rifa o el super admin pueden hacerlo.
+# El boleto pasa a estado "asignado" y se marca el monto.
+# ============================================================
+
+@app.route(
+    "/rifas/marcar-pagado/<int:boleto_id>",
+    methods=["POST"]
+)
+@admin_required
+def marcar_pagado_efectivo(boleto_id):
+
+    db = get_db()
+
+    try:
+
+        cursor = db.cursor()
+
+        # ----------------------------------------------------
+        # Buscar el boleto y su rifa
+        # ----------------------------------------------------
+
+        cursor.execute("""
+            SELECT
+                b.id,
+                b.numero,
+                b.estado,
+                b.metodo_pago,
+                b.rifa_id,
+                r.titulo,
+                r.precio_boleto,
+                r.propietario_slug
+            FROM sp_boletos b
+            INNER JOIN sp_rifas r ON r.id = b.rifa_id
+            WHERE b.id = %s
+            FOR UPDATE
+        """, (boleto_id,))
+
+        boleto = cursor.fetchone()
+
+        if not boleto:
+
+            db.rollback()
+
+            flash("El boleto no existe.", "error")
+
+            return redirect(url_for("mi_panel"))
+
+        # ----------------------------------------------------
+        # Validar permisos
+        # ----------------------------------------------------
+
+        admin_type = session.get("admin_type")
+        propietario_slug = session.get("propietario_slug")
+
+        # Si es usuario restringido, verificar que sea el dueño
+        if admin_type == "restringido":
+
+            if propietario_slug != boleto["propietario_slug"]:
+
+                db.rollback()
+
+                flash("No tienes permiso para modificar este boleto.", "error")
+
+                return redirect(url_for("mi_panel"))
+
+        # ----------------------------------------------------
+        # Validar estado del boleto
+        # ----------------------------------------------------
+
+        if boleto["estado"] != "reservado":
+
+            db.rollback()
+
+            flash(
+                f"El boleto #{boleto['numero']} no está reservado "
+                f"(estado actual: {boleto['estado']}).",
+                "error"
+            )
+
+            if admin_type == "super":
+                return redirect(url_for("admin_efectivo"))
+            else:
+                return redirect(url_for("mi_panel"))
+
+        if boleto["metodo_pago"] != "efectivo":
+
+            db.rollback()
+
+            flash(
+                "Este boleto no fue reservado con pago en efectivo.",
+                "error"
+            )
+
+            if admin_type == "super":
+                return redirect(url_for("admin_efectivo"))
+            else:
+                return redirect(url_for("mi_panel"))
+
+        # ----------------------------------------------------
+        # Marcar como pagado (asignado)
+        # ----------------------------------------------------
+
+        cursor.execute("""
+            UPDATE sp_boletos
+            SET
+                estado = 'asignado',
+                pagado_en = NOW(),
+                asignado_en = NOW(),
+                monto_pagado = %s,
+                actualizado_en = NOW()
+            WHERE id = %s
+        """, (
+            boleto["precio_boleto"],
+            boleto["id"]
+        ))
+
+        db.commit()
+
+        flash(
+            f"✅ Boleto #{boleto['numero']} marcado como PAGADO. "
+            f"Se acreditó ${boleto['precio_boleto']} a tu cuenta.",
+            "success"
+        )
+
+        # ----------------------------------------------------
+        # Redirigir según el tipo de usuario
+        # ----------------------------------------------------
+
+        if admin_type == "super":
+            return redirect(url_for("admin_efectivo"))
+        else:
+            return redirect(url_for("mi_panel"))
+
+    except Exception as error:
+
+        db.rollback()
+
+        print("ERROR AL MARCAR PAGADO:", error)
+
+        flash("Ocurrió un error al marcar como pagado.", "error")
+
+        return redirect(url_for("mi_panel"))
+
+    finally:
+
+        db.close()
+
+
+# ============================================================
+# CANCELAR RESERVA EN EFECTIVO
+#
+# Libera el boleto (vuelve a estar disponible).
+# ============================================================
+
+@app.route(
+    "/rifas/cancelar-reserva/<int:boleto_id>",
+    methods=["POST"]
+)
+@admin_required
+def cancelar_reserva_efectivo(boleto_id):
+
+    db = get_db()
+
+    try:
+
+        cursor = db.cursor()
+
+        cursor.execute("""
+            SELECT
+                b.id,
+                b.numero,
+                b.estado,
+                b.metodo_pago,
+                b.rifa_id,
+                r.propietario_slug
+            FROM sp_boletos b
+            INNER JOIN sp_rifas r ON r.id = b.rifa_id
+            WHERE b.id = %s
+            FOR UPDATE
+        """, (boleto_id,))
+
+        boleto = cursor.fetchone()
+
+        if not boleto:
+
+            db.rollback()
+
+            flash("El boleto no existe.", "error")
+
+            return redirect(url_for("mi_panel"))
+
+        # Validar permisos
+        admin_type = session.get("admin_type")
+        propietario_slug = session.get("propietario_slug")
+
+        if admin_type == "restringido":
+
+            if propietario_slug != boleto["propietario_slug"]:
+
+                db.rollback()
+
+                flash("No tienes permiso para modificar este boleto.", "error")
+
+                return redirect(url_for("mi_panel"))
+
+        if boleto["estado"] != "reservado":
+
+            db.rollback()
+
+            flash(
+                f"El boleto #{boleto['numero']} ya no está reservado.",
+                "error"
+            )
+
+            if admin_type == "super":
+                return redirect(url_for("admin_efectivo"))
+            else:
+                return redirect(url_for("mi_panel"))
+
+        # Liberar boleto
+        cursor.execute("""
+            UPDATE sp_boletos
+            SET
+                estado = 'disponible',
+                reserva_token = NULL,
+                reservado_en = NULL,
+                nombre = NULL,
+                numero_especial = NULL,
+                metodo_pago = NULL,
+                actualizado_en = NOW()
+            WHERE id = %s
+        """, (boleto["id"],))
+
+        db.commit()
+
+        flash(
+            f"Boleto #{boleto['numero']} liberado. Vuelve a estar disponible.",
+            "success"
+        )
+
+        if admin_type == "super":
+            return redirect(url_for("admin_efectivo"))
+        else:
+            return redirect(url_for("mi_panel"))
+
+    except Exception as error:
+
+        db.rollback()
+
+        print("ERROR AL CANCELAR RESERVA:", error)
+
+        flash("Ocurrió un error.", "error")
+
+        return redirect(url_for("mi_panel"))
 
     finally:
 
@@ -2487,17 +2794,9 @@ def clonar_rifa(rifa_id):
 @admin_required
 def mi_panel():
 
-    # ----------------------------------------------------
     # Si es super admin, mándalo al panel completo
-    # ----------------------------------------------------
-
     if session.get("admin_type") == "super":
-
         return redirect(url_for("admin_rifas"))
-
-    # ----------------------------------------------------
-    # Obtener el slug del propietario
-    # ----------------------------------------------------
 
     propietario_slug = session.get("propietario_slug")
 
@@ -2512,6 +2811,31 @@ def mi_panel():
     try:
 
         cursor = db.cursor()
+
+        # ------------------------------------------------
+        # Reservas pendientes en efectivo
+        # ------------------------------------------------
+
+        cursor.execute("""
+            SELECT
+                b.id,
+                b.numero,
+                b.nombre,
+                b.numero_especial,
+                b.reservado_en,
+                b.reserva_token,
+                r.titulo,
+                r.id AS rifa_id,
+                r.precio_boleto
+            FROM sp_boletos b
+            INNER JOIN sp_rifas r ON r.id = b.rifa_id
+            WHERE r.propietario_slug = %s
+              AND b.estado = 'reservado'
+              AND b.metodo_pago = 'efectivo'
+            ORDER BY b.reservado_en ASC
+        """, (propietario_slug,))
+
+        reservas_pendientes = cursor.fetchall()
 
         # ------------------------------------------------
         # Rifas del propietario
@@ -2538,8 +2862,7 @@ def mi_panel():
         rifas = cursor.fetchall()
 
         # ------------------------------------------------
-        # Stats globales del propietario
-        # (solo sorteos en curso)
+        # Stats globales
         # ------------------------------------------------
 
         cursor.execute("""
@@ -2556,10 +2879,6 @@ def mi_panel():
             for fila in cursor.fetchall()
         }
 
-        # ------------------------------------------------
-        # Ingresos totales del propietario (todos sus sorteos)
-        # ------------------------------------------------
-
         cursor.execute("""
             SELECT
                 COALESCE(SUM(b.monto_pagado), 0) AS ingresos_totales,
@@ -2572,10 +2891,6 @@ def mi_panel():
         """, (propietario_slug,))
 
         stats_vendedor = cursor.fetchone()
-
-        # ------------------------------------------------
-        # Stats por rifa (solo las del propietario)
-        # ------------------------------------------------
 
         cursor.execute("""
             SELECT
@@ -2605,7 +2920,8 @@ def mi_panel():
             rifas=rifas,
             stats_boletos=stats_boletos,
             stats_vendedor=stats_vendedor,
-            stats_por_rifa=stats_por_rifa
+            stats_por_rifa=stats_por_rifa,
+            reservas_pendientes=reservas_pendientes
         )
 
     finally:
