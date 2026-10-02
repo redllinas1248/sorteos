@@ -107,6 +107,48 @@
                 </span>
             </div>
 
+            <div class="campo">
+                <label for="telefono">Teléfono de contacto</label>
+                <input
+                    type="tel"
+                    id="telefono"
+                    name="telefono"
+                    maxlength="20"
+                    placeholder="Ej: 2831234567"
+                >
+                <span class="ayuda">
+                    Para que los compradores te contacten si van a pagar en efectivo.
+                </span>
+            </div>
+
+            <div class="campo">
+                <label for="whatsapp">WhatsApp (opcional)</label>
+                <input
+                    type="tel"
+                    id="whatsapp"
+                    name="whatsapp"
+                    maxlength="20"
+                    placeholder="Ej: 2831234567"
+                >
+                <span class="ayuda">
+                    Si es diferente al teléfono. Si no pones nada, se usará el teléfono.
+                </span>
+            </div>
+
+            <div class="campo">
+                <label for="notas_contacto">Notas de contacto (opcional)</label>
+                <textarea
+                    id="notas_contacto"
+                    name="notas_contacto"
+                    rows="3"
+                    placeholder="Ej: Vive en la calle Hidalgo #45, frente a la tienda. Solo por las tardes."
+                    style="min-height: 80px; resize: vertical;"
+                ></textarea>
+                <span class="ayuda">
+                    Aparecerá en la pantalla del comprador cuando elija "Efectivo". Sé específico para que la gente sepa cómo llegar.
+                </span>
+            </div>
+
             <div class="acciones">
                 <button type="submit" class="boton guardar">
                     ✅ Crear usuario

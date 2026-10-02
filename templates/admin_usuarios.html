@@ -84,17 +84,24 @@
                     <tr>
                         <th>Usuario</th>
                         <th>Nombre</th>
-                        <th>Slug propietario</th>
+                        <th>Contacto</th>
+                        <th>Slug</th>
                         <th>Estado</th>
-                        <th>Creado</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for u in usuarios %}
+                                        {% for u in usuarios %}
                         <tr>
                             <td><span class="username">{{ u.username }}</span></td>
                             <td><span class="nombre">{{ u.nombre }}</span></td>
+                            <td>
+                                {% if u.telefono %}
+                                    📞 {{ u.telefono }}
+                                {% else %}
+                                    <span style="color: #4b5563; font-style: italic;">Sin teléfono</span>
+                                {% endif %}
+                            </td>
                             <td><span class="slug">{{ u.propietario_slug }}</span></td>
                             <td>
                                 {% if u.activo %}
@@ -102,9 +109,6 @@
                                 {% else %}
                                     <span class="estado-inactivo">✗ Inactivo</span>
                                 {% endif %}
-                            </td>
-                            <td class="fecha">
-                                {{ (u.creado_en | mx).strftime('%d/%m/%Y') if u.creado_en else '—' }}
                             </td>
                             <td>
                                 <div class="acciones">

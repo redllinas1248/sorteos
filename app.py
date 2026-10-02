@@ -2451,6 +2451,9 @@ def admin_usuarios():
                 username,
                 nombre,
                 propietario_slug,
+                telefono,
+                whatsapp,
+                notas_contacto,
                 activo,
                 ultimo_acceso,
                 creado_en
@@ -2484,10 +2487,12 @@ def crear_admin():
     password = request.form.get("password", "").strip()
     nombre = request.form.get("nombre", "").strip()
     propietario_slug = request.form.get("propietario_slug", "").strip().lower()
+    telefono = request.form.get("telefono", "").strip() or None
+    whatsapp = request.form.get("whatsapp", "").strip() or None
+    notas_contacto = request.form.get("notas_contacto", "").strip() or None
 
-    # Validaciones
     if not username or not password or not nombre or not propietario_slug:
-        flash("Todos los campos son obligatorios.", "error")
+        flash("Los campos con * son obligatorios.", "error")
         return redirect(url_for("nuevo_admin"))
 
     if len(username) < 3 or len(username) > 50:
@@ -2512,7 +2517,6 @@ def crear_admin():
 
         cursor = db.cursor()
 
-        # Verificar que el username no exista
         cursor.execute(
             "SELECT id FROM sp_admins WHERE username = %s",
             (username,)
@@ -2522,7 +2526,6 @@ def crear_admin():
             flash("Ese nombre de usuario ya existe.", "error")
             return redirect(url_for("nuevo_admin"))
 
-        # Verificar que el slug no exista
         cursor.execute(
             "SELECT id FROM sp_admins WHERE propietario_slug = %s",
             (propietario_slug,)
@@ -2532,7 +2535,6 @@ def crear_admin():
             flash("Ya existe un usuario con ese slug de propietario.", "error")
             return redirect(url_for("nuevo_admin"))
 
-        # Hashear el password
         password_hash = generate_password_hash(password)
 
         cursor.execute("""
@@ -2541,14 +2543,20 @@ def crear_admin():
                 password_hash,
                 nombre,
                 propietario_slug,
+                telefono,
+                whatsapp,
+                notas_contacto,
                 activo
             )
-            VALUES (%s, %s, %s, %s, TRUE)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, TRUE)
         """, (
             username,
             password_hash,
             nombre,
-            propietario_slug
+            propietario_slug,
+            telefono,
+            whatsapp,
+            notas_contacto
         ))
 
         db.commit()
