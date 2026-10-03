@@ -757,6 +757,27 @@ def iniciar_pago(reserva_token):
 
         db.commit()
 
+        # ----------------------------------------------------
+        # Si es AJAX (OXXO en nueva pestaña), devolver JSON
+        # ----------------------------------------------------
+
+        is_ajax = request.headers.get("X-Requested-With") == "XMLHttpRequest"
+
+        if is_ajax:
+
+            return jsonify({
+                "success": True,
+                "url": checkout_session.url,
+                "pendiente_url": url_for(
+                    "pago_pendiente",
+                    reserva_token=reserva_token
+                )
+            })
+
+        # ----------------------------------------------------
+        # Si es form normal (Tarjeta), redirect clásico
+        # ----------------------------------------------------
+
         return redirect(checkout_session.url, code=303)
 
     except Exception as error:

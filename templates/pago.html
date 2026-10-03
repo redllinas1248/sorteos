@@ -643,7 +643,7 @@
     // SUBMIT DEL FORMULARIO
     // ============================================================
 
-    const form = document.getElementById('formPago');
+        const form = document.getElementById('formPago');
     const overlay = document.getElementById('overlayPago');
 
     form.addEventListener('submit', function(e) {
@@ -657,9 +657,10 @@
                 '📌 IMPORTANTE\n\n' +
                 'Vas a generar un voucher de OXXO.\n\n' +
                 '1. GUARDA tu código de participación.\n' +
-                '2. Imprime o guarda el voucher.\n' +
-                '3. Paga en cualquier OXXO.\n' +
-                '4. Regresa a "Consultar" con tu código.\n\n' +
+                '2. Se abrirá Stripe en OTRA PESTAÑA para que generes tu voucher.\n' +
+                '3. Imprime o guarda el voucher.\n' +
+                '4. Paga en cualquier OXXO.\n' +
+                '5. Regresa a "Consultar" con tu código.\n\n' +
                 '¿Ya guardaste tu código?';
         } else if (metodoSeleccionado === 'efectivo') {
             mensaje =
@@ -680,6 +681,79 @@
                 return;
             }
         }
+
+        // ----------------------------------------------------
+        // OXXO: abrir Stripe en nueva pestaña (fetch + window.open)
+        // ----------------------------------------------------
+
+        if (metodoSeleccionado === 'oxxo') {
+
+            e.preventDefault();
+
+            btnPagar.disabled = true;
+            btnPagar.textContent = '⏳ Preparando voucher...';
+            overlay.classList.add('activo');
+
+            // Cambiar mensaje del overlay
+            overlay.querySelector('h3').textContent = '⏳ Preparando pago...';
+            overlay.querySelector('p').textContent =
+                'Se abrirá Stripe en una nueva pestaña.';
+
+            const formData = new FormData(form);
+
+            fetch(form.action, {
+                method: 'POST',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: formData
+            })
+            .then(function(response) {
+                return response.json();
+            })
+            .then(function(data) {
+
+                if (data.success && data.url) {
+
+                    // Abrir Stripe en nueva pestaña
+                    window.open(data.url, '_blank');
+
+                    // Redirigir la pestaña actual a la pantalla de pendiente
+                    window.location.href = data.pendiente_url;
+
+                } else {
+
+                    alert(
+                        'No se pudo iniciar el pago.\n' +
+                        (data.error || 'Inténtalo de nuevo.')
+                    );
+
+                    btnPagar.disabled = false;
+                    btnPagar.textContent = '🔒 Pagar ahora';
+                    overlay.classList.remove('activo');
+                }
+
+            })
+            .catch(function(error) {
+
+                console.error('Error:', error);
+
+                alert(
+                    'Error de conexión.\n' +
+                    'Asegúrate de permitir ventanas emergentes e intenta de nuevo.'
+                );
+
+                btnPagar.disabled = false;
+                btnPagar.textContent = '🔒 Pagar ahora';
+                overlay.classList.remove('activo');
+            });
+
+            return;
+        }
+
+        // ----------------------------------------------------
+        // Tarjeta / Efectivo: submit normal
+        // ----------------------------------------------------
 
         btnPagar.disabled = true;
         btnPagar.textContent = '⏳ Procesando...';
