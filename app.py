@@ -2280,7 +2280,7 @@ def crear_rifa():
             )
             video_url = upload_result.get("secure_url")
 
-            except Exception as error:
+        except Exception as error:
             app.logger.error(f"ERROR CLOUDINARY: {error}")
             flash(f"No se pudo subir el video: {error}", "error")
 
