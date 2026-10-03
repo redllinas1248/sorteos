@@ -74,23 +74,24 @@
         }
 
         input,
-textarea,
-select {
-    width: 100%;
-    padding: 12px;
-    border: 1px solid #d1d5db;
-    border-radius: 9px;
-    font-size: 15px;
-    font-family: Arial, sans-serif;
-    background: white;
-}
+        textarea,
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 9px;
+            font-size: 15px;
+            font-family: Arial, sans-serif;
+            background: white;
+        }
 
-select {
-    cursor: pointer;
-}
+        select {
+            cursor: pointer;
+        }
 
         input:focus,
-        textarea:focus {
+        textarea:focus,
+        select:focus {
             outline: none;
             border-color: #1877f2;
             box-shadow: 0 0 0 2px rgba(24,119,242,0.1);
@@ -153,6 +154,123 @@ select {
 
         .estado-actual strong {
             text-transform: uppercase;
+        }
+
+        /* ============================================
+           SECCIÓN DE VIDEO
+        ============================================ */
+
+        .video-seccion {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .video-seccion h3 {
+            margin: 0 0 15px;
+            font-size: 16px;
+            color: #111827;
+        }
+
+        .video-actual {
+            background: white;
+            border: 1px solid #d1d5db;
+            border-radius: 9px;
+            padding: 12px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .video-actual-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .video-actual-info small {
+            display: block;
+            color: #6b7280;
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+
+        .video-actual-info code {
+            display: block;
+            color: #1877f2;
+            font-size: 12px;
+            word-break: break-all;
+            font-family: 'Courier New', monospace;
+        }
+
+        .video-preview {
+            width: 80px;
+            height: 60px;
+            border-radius: 8px;
+            object-fit: cover;
+            background: #000;
+        }
+
+        .video-quitar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: #fee2e2;
+            color: #991b1b;
+            border-radius: 9px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .video-quitar input {
+            width: auto;
+            margin: 0;
+        }
+
+        .video-opcion {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            font-weight: bold;
+            font-size: 14px;
+            color: #111827;
+        }
+
+        .video-opcion input[type="radio"] {
+            width: auto;
+            margin: 0;
+        }
+
+        .video-tabla {
+            margin-top: 10px;
+        }
+
+        .video-tabla input[type="file"] {
+            padding: 10px;
+            background: white;
+        }
+
+        .aviso-video {
+            background: #fef3c7;
+            border: 1px solid #fbbf24;
+            color: #78350f;
+            padding: 12px;
+            border-radius: 9px;
+            font-size: 13px;
+            line-height: 1.5;
+            margin-top: 12px;
+        }
+
+        .aviso-video strong {
+            color: #92400e;
         }
 
         @media (max-width: 700px) {
@@ -230,6 +348,7 @@ select {
 
         <form
             method="POST"
+            enctype="multipart/form-data"
 
             {% if modo_edicion %}
 
@@ -285,7 +404,7 @@ select {
             </div>
 
 
-                        <!-- PROPIETARIO -->
+            <!-- PROPIETARIO -->
 
             <div class="campo">
 
@@ -296,8 +415,8 @@ select {
                 <select id="propietario_slug" name="propietario_slug">
 
                     <option value="admin" {% if modo_edicion and rifa.propietario_slug == 'admin' %}selected{% endif %}>
-    👑 Admin (yo)
-</option>
+                        👑 Admin (yo)
+                    </option>
 
                     {% for u in usuarios %}
                         <option value="{{ u.propietario_slug }}"
@@ -313,6 +432,7 @@ select {
                 </span>
 
             </div>
+
 
             <!-- IMAGEN -->
 
@@ -334,8 +454,138 @@ select {
                 >
 
                 <span class="ayuda">
-                    Por ahora utilizaremos una URL. Más adelante podemos integrar Cloudinary para subir imágenes directamente.
+                    URL de la imagen principal del sorteo.
                 </span>
+
+            </div>
+
+
+            <!-- ============================================
+                 VIDEO (SUBIR ARCHIVO O URL DE YOUTUBE)
+            ============================================= -->
+
+            <div class="video-seccion">
+
+                <h3>🎬 Video del sorteo (opcional)</h3>
+
+                <span class="ayuda" style="margin-bottom: 15px;">
+                    Puedes subir un video corto (5-15 segundos, máx 20MB) o pegar un enlace de YouTube.
+                    Se mostrará al pasar el mouse sobre la tarjeta del sorteo.
+                </span>
+
+
+                {% if modo_edicion and rifa.video_url %}
+
+                    <!-- VIDEO ACTUAL -->
+                    <div class="video-actual">
+
+                        <div class="video-actual-info">
+                            <small>VIDEO ACTUAL</small>
+                            <code>{{ rifa.video_url }}</code>
+                        </div>
+
+                        {% if 'youtube.com' in rifa.video_url or 'youtu.be' in rifa.video_url %}
+                            <div class="video-preview" style="display:flex; align-items:center; justify-content:center; background:#dc2626; color:white; font-size:24px;">
+                                ▶
+                            </div>
+                        {% else %}
+                            <video
+                                class="video-preview"
+                                src="{{ rifa.video_url }}"
+                                muted
+                                playsinline
+                            ></video>
+                        {% endif %}
+
+                        <label class="video-quitar">
+                            <input type="checkbox" name="quitar_video">
+                            🗑️ Quitar video
+                        </label>
+
+                    </div>
+
+                {% endif %}
+
+
+                <!-- OPCIÓN 1: SUBIR ARCHIVO -->
+
+                <div class="video-opcion">
+
+                    <input
+                        type="radio"
+                        id="opcion-subir"
+                        name="tipo_video"
+                        value="subir"
+                        checked
+                        onchange="mostrarOpcion()"
+                    >
+
+                    <label for="opcion-subir" style="margin: 0; cursor: pointer;">
+                        📤 Subir archivo desde mi dispositivo
+                    </label>
+
+                </div>
+
+                <div class="video-tabla" id="tabla-subir">
+
+                    <input
+                        type="file"
+                        id="video_file"
+                        name="video_file"
+                        accept="video/mp4,video/mov,video/webm,video/quicktime"
+                    >
+
+                    <span class="ayuda">
+                        Formatos: MP4, MOV, WEBM. Máximo recomendado: 20MB.
+                        Para videos más largos, mejor súbelo a YouTube.
+                    </span>
+
+                </div>
+
+
+                <!-- OPCIÓN 2: URL DE YOUTUBE -->
+
+                <div class="video-opcion" style="margin-top: 18px;">
+
+                    <input
+                        type="radio"
+                        id="opcion-youtube"
+                        name="tipo_video"
+                        value="youtube"
+                        onchange="mostrarOpcion()"
+                    >
+
+                    <label for="opcion-youtube" style="margin: 0; cursor: pointer;">
+                        🔗 Pegar enlace de YouTube
+                    </label>
+
+                </div>
+
+                <div class="video-tabla" id="tabla-youtube" style="display: none;">
+
+                    <input
+                        type="url"
+                        id="video_url"
+                        name="video_url"
+                        placeholder="https://www.youtube.com/watch?v=..."
+
+                        {% if modo_edicion and rifa.video_url and ('youtube.com' in rifa.video_url or 'youtu.be' in rifa.video_url) %}
+                            value="{{ rifa.video_url }}"
+                        {% endif %}
+                    >
+
+                    <span class="ayuda">
+                        Pega el enlace normal de YouTube. Se mostrará un pequeño preview al pasar el mouse.
+                    </span>
+
+                </div>
+
+
+                <div class="aviso-video">
+                    <strong>💡 Sugerencia:</strong>
+                    Los videos cortos (5-10 segundos) funcionan mejor porque se reproducen en bucle
+                    cuando el usuario pasa el mouse sobre la tarjeta. Videos largos pueden marear.
+                </div>
 
             </div>
 
@@ -405,7 +655,7 @@ select {
                     >
 
                     <span class="ayuda">
-                        Precio que utilizaremos cuando agreguemos el método de pago.
+                        Precio que pagará el usuario por cada boleto.
                     </span>
 
                 </div>
@@ -522,6 +772,38 @@ select {
 
 
 </main>
+
+
+<script>
+
+    // ============================================================
+    // MOSTRAR / OCULTAR OPCIÓN DE VIDEO SEGÚN SELECCIÓN
+    // ============================================================
+
+    function mostrarOpcion() {
+
+        const tipo = document.querySelector('input[name="tipo_video"]:checked').value;
+
+        const tablaSubir = document.getElementById('tabla-subir');
+        const tablaYoutube = document.getElementById('tabla-youtube');
+
+        if (tipo === 'subir') {
+
+            tablaSubir.style.display = 'block';
+            tablaYoutube.style.display = 'none';
+            document.getElementById('video_url').value = '';
+
+        } else {
+
+            tablaSubir.style.display = 'none';
+            tablaYoutube.style.display = 'block';
+            document.getElementById('video_file').value = '';
+
+        }
+
+    }
+
+</script>
 
 
 </body>
