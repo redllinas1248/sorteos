@@ -2498,7 +2498,7 @@ def actualizar_rifa(rifa_id):
                     ],
                 )
                 video_url = upload_result.get("secure_url")
-                except Exception as error:
+            except Exception as error:
                 app.logger.error(f"ERROR CLOUDINARY: {error}")
                 flash(f"No se pudo subir el video nuevo: {error}", "error")
 
