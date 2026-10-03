@@ -81,25 +81,25 @@
         }
 
         .admin-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 34px;
-    height: 34px;
-    background: rgba(139, 92, 246, 0.12);
-    border: 1px solid rgba(139, 92, 246, 0.3);
-    border-radius: 50%;
-    font-size: 15px;
-    text-decoration: none;
-    transition: 0.2s;
-    flex-shrink: 0;
-}
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 34px;
+            height: 34px;
+            background: rgba(139, 92, 246, 0.12);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 50%;
+            font-size: 15px;
+            text-decoration: none;
+            transition: 0.2s;
+            flex-shrink: 0;
+        }
 
-.admin-icon:hover {
-    background: rgba(139, 92, 246, 0.25);
-    border-color: #8b5cf6;
-    transform: scale(1.1);
-}
+        .admin-icon:hover {
+            background: rgba(139, 92, 246, 0.25);
+            border-color: #8b5cf6;
+            transform: scale(1.1);
+        }
 
         /* ============================================
            HERO
@@ -328,6 +328,80 @@
             background: linear-gradient(135deg, #1e293b, #0f1424);
             font-size: 60px;
             color: #8b5cf6;
+        }
+
+        /* ============================================
+           RIFA MEDIA (imagen + video hover)
+        ============================================ */
+
+        .rifa-media {
+            position: relative;
+            width: 100%;
+            height: 220px;
+            overflow: hidden;
+            background: #0a0d18;
+            cursor: pointer;
+        }
+
+        .rifa-media .rifa-img {
+            width: 100%;
+            height: 220px;
+            object-fit: contain;
+            display: block;
+            padding: 10px;
+            transition: opacity 0.4s ease;
+        }
+
+        .rifa-media .rifa-placeholder.rifa-img {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 60px;
+            color: #8b5cf6;
+            padding: 0;
+        }
+
+        .rifa-video-hover {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 2;
+            animation: fadeInVideo 0.4s ease;
+        }
+
+        .rifa-video-hover video,
+        .rifa-video-hover iframe {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border: 0;
+            display: block;
+        }
+
+        @keyframes fadeInVideo {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .rifa-video-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.75);
+            color: white;
+            font-size: 11px;
+            font-weight: bold;
+            padding: 4px 10px;
+            border-radius: 20px;
+            z-index: 3;
+            backdrop-filter: blur(4px);
+            pointer-events: none;
+        }
+
+        .rifa-media:hover .rifa-img {
+            opacity: 0;
         }
 
         .rifa-contenido {
@@ -602,10 +676,40 @@
 
                 <div class="rifa">
 
-                    {% if rifa.imagen_url %}
+                    {% if rifa.video_url %}
+
+                        {# ============================================
+                           CON VIDEO: muestra imagen con video en hover
+                        ============================================ #}
+
+                        <div class="rifa-media"
+                             data-video-url="{{ rifa.video_url }}"
+                             data-es-youtube="{% if 'youtube.com' in rifa.video_url or 'youtu.be' in rifa.video_url %}1{% else %}0{% endif %}">
+
+                            {% if rifa.imagen_url %}
+                                <img
+                                    src="{{ rifa.imagen_url }}"
+                                    alt="{{ rifa.titulo }}"
+                                    class="rifa-img"
+                                >
+                            {% else %}
+                                <div class="rifa-placeholder rifa-img">🎁</div>
+                            {% endif %}
+
+                            <div class="rifa-video-hover" style="display: none;"></div>
+
+                            <div class="rifa-video-badge">▶ Video</div>
+
+                        </div>
+
+                    {% elif rifa.imagen_url %}
+
                         <img src="{{ rifa.imagen_url }}" alt="{{ rifa.titulo }}">
+
                     {% else %}
+
                         <div class="rifa-placeholder">🎁</div>
+
                     {% endif %}
 
                     <div class="rifa-contenido">
@@ -785,6 +889,101 @@
 
 
 <script>
+
+    // ============================================================
+    // VIDEO EN HOVER DE TARJETAS DE RIFAS
+    // ============================================================
+
+    document.querySelectorAll('.rifa-media').forEach(function(media) {
+
+        const videoUrl = media.dataset.videoUrl;
+        const esYouTube = media.dataset.esYoutube === '1';
+        const contenedorVideo = media.querySelector('.rifa-video-hover');
+
+        if (!videoUrl || !contenedorVideo) return;
+
+        let videoElement = null;
+
+        function iniciarVideo() {
+
+            if (videoElement) return;
+
+            if (esYouTube) {
+
+                const videoId = extraerYouTubeId(videoUrl);
+
+                if (!videoId) return;
+
+                contenedorVideo.innerHTML =
+                    '<iframe ' +
+                    'src="https://www.youtube.com/embed/' + videoId +
+                    '?autoplay=1&mute=1&loop=1&playlist=' + videoId +
+                    '&controls=0&showinfo=0&modestbranding=1&playsinline=1" ' +
+                    'allow="autoplay; encrypted-media" ' +
+                    'allowfullscreen ' +
+                    'frameborder="0"></iframe>';
+
+                videoElement = contenedorVideo.querySelector('iframe');
+
+            } else {
+
+                contenedorVideo.innerHTML =
+                    '<video ' +
+                    'src="' + videoUrl + '" ' +
+                    'autoplay ' +
+                    'muted ' +
+                    'loop ' +
+                    'playsinline ' +
+                    'preload="none"></video>';
+
+                videoElement = contenedorVideo.querySelector('video');
+
+                if (videoElement) {
+                    videoElement.play().catch(function(err) {
+                        console.log('Error al reproducir video:', err);
+                    });
+                }
+
+            }
+
+            contenedorVideo.style.display = 'block';
+
+        }
+
+        function detenerVideo() {
+
+            if (!videoElement) return;
+
+            if (videoElement.tagName === 'VIDEO') {
+                videoElement.pause();
+                videoElement.currentTime = 0;
+            }
+
+            contenedorVideo.innerHTML = '';
+            contenedorVideo.style.display = 'none';
+            videoElement = null;
+
+        }
+
+        media.addEventListener('mouseenter', iniciarVideo);
+        media.addEventListener('mouseleave', detenerVideo);
+
+    });
+
+
+    // ============================================================
+    // HELPER: EXTRAER ID DE YOUTUBE
+    // ============================================================
+
+    function extraerYouTubeId(url) {
+
+        const regex = /(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+        const match = url.match(regex);
+
+        return match ? match[1] : null;
+
+    }
+
 
     // ============================================================
     // SERVICE WORKER
