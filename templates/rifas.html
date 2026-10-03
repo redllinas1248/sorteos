@@ -330,6 +330,28 @@
             color: #8b5cf6;
         }
 
+        .audio-tooltip {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(16, 185, 129, 0.95);
+            color: white;
+            font-size: 13px;
+            font-weight: bold;
+            padding: 6px 14px;
+            border-radius: 20px;
+            z-index: 10;
+            pointer-events: none;
+            animation: fadeInTooltip 0.3s ease;
+            white-space: nowrap;
+        }
+
+        @keyframes fadeInTooltip {
+            from { opacity: 0; transform: translate(-50%, 10px); }
+            to { opacity: 1; transform: translate(-50%, 0); }
+        }
+
         /* ============================================
            RIFA MEDIA (imagen + video hover)
         ============================================ */
@@ -1182,6 +1204,28 @@
         const match = url.match(regex);
 
         return match ? match[1] : null;
+
+    }
+
+
+    // ============================================================
+    // TOOLTIP: AUDIO ACTIVADO
+    // ============================================================
+
+    function mostrarTooltipAudio(media) {
+
+        // Si ya existe un tooltip, no duplicar
+        if (media.querySelector('.audio-tooltip')) return;
+
+        const tooltip = document.createElement('div');
+        tooltip.className = 'audio-tooltip';
+        tooltip.textContent = '🔊 Audio activado';
+
+        media.appendChild(tooltip);
+
+        setTimeout(function() {
+            tooltip.remove();
+        }, 2000);
 
     }
 
