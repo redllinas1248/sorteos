@@ -686,7 +686,7 @@
         // OXXO: abrir Stripe en nueva pestaña (fetch + window.open)
         // ----------------------------------------------------
 
-        if (metodoSeleccionado === 'oxxo') {
+                if (metodoSeleccionado === 'oxxo') {
 
             e.preventDefault();
 
@@ -694,10 +694,54 @@
             btnPagar.textContent = '⏳ Preparando voucher...';
             overlay.classList.add('activo');
 
-            // Cambiar mensaje del overlay
             overlay.querySelector('h3').textContent = '⏳ Preparando pago...';
             overlay.querySelector('p').textContent =
                 'Se abrirá Stripe en una nueva pestaña.';
+
+            // ====================================================
+            // 🔑 CLAVE: Abrir la ventana AHORA (dentro del click)
+            // para que el navegador NO la bloquee.
+            // Después le asignamos la URL que devuelva el backend.
+            // ====================================================
+
+            const ventanaStripe = window.open('about:blank', '_blank');
+
+            // Si el navegador bloquea incluso esta, mostramos aviso
+            if (!ventanaStripe) {
+
+                overlay.classList.remove('activo');
+
+                alert(
+                    '⚠️ Tu navegador bloqueó la ventana del pago.\n\n' +
+                    'Por favor permite las ventanas emergentes para este sitio ' +
+                    'y vuelve a intentar.'
+                );
+
+                btnPagar.disabled = false;
+                btnPagar.textContent = '🔒 Pagar ahora';
+
+                return;
+
+            }
+
+            // Mostrar mensaje dentro de la ventana nueva mientras carga
+            try {
+
+                ventanaStripe.document.write(
+                    '<html><head><title>Cargando pago...</title>' +
+                    '<style>body{font-family:Arial;padding:40px;text-align:center;background:#f4f6f8;}' +
+                    'h2{color:#1877f2;} p{color:#555;}</style></head>' +
+                    '<body><h2>⏳ Preparando tu pago...</h2>' +
+                    '<p>Esto toma solo un momento.</p></body></html>'
+                );
+
+            } catch (e) {
+                // Algunos navegadores no permiten escribir en about:blank, es normal
+            }
+
+            // ----------------------------------------------------
+            // Fetch al backend para crear la sesión de Stripe
+            // ----------------------------------------------------
 
             const formData = new FormData(form);
 
@@ -715,13 +759,16 @@
 
                 if (data.success && data.url) {
 
-                    // Abrir Stripe en nueva pestaña
-                    window.open(data.url, '_blank');
+                    // Cambiar la URL de la ventana que ya abrimos
+                    ventanaStripe.location.href = data.url;
 
                     // Redirigir la pestaña actual a la pantalla de pendiente
                     window.location.href = data.pendiente_url;
 
                 } else {
+
+                    // Cerrar la ventana en blanco
+                    try { ventanaStripe.close(); } catch (e) {}
 
                     alert(
                         'No se pudo iniciar el pago.\n' +
@@ -738,9 +785,11 @@
 
                 console.error('Error:', error);
 
+                try { ventanaStripe.close(); } catch (e) {}
+
                 alert(
                     'Error de conexión.\n' +
-                    'Asegúrate de permitir ventanas emergentes e intenta de nuevo.'
+                    'Inténtalo de nuevo.'
                 );
 
                 btnPagar.disabled = false;
