@@ -330,7 +330,7 @@
             color: #8b5cf6;
         }
 
-                /* ============================================
+        /* ============================================
            RIFA MEDIA (imagen + video hover)
         ============================================ */
 
@@ -368,6 +368,19 @@
             object-fit: contain;
             display: block;
             background: #0a0d18;
+            pointer-events: none;
+        }
+
+        /* Ocultar controles nativos del navegador (ícono de mute) */
+        .rifa-video::-webkit-media-controls,
+        .rifa-video::-webkit-media-controls-enclosure,
+        .rifa-video::-webkit-media-controls-panel,
+        .rifa-video::-webkit-media-controls-play-button,
+        .rifa-video::-webkit-media-controls-start-playback-button,
+        .rifa-video::-webkit-media-controls-overlay-play-button {
+            display: none !important;
+            -webkit-appearance: none;
+            opacity: 0 !important;
         }
 
         /* Contenedor de video hover (YouTube) */
@@ -702,7 +715,7 @@
 
                 <div class="rifa">
 
-                                        {% if rifa.video_url and ('youtube.com' in rifa.video_url or 'youtu.be' in rifa.video_url) %}
+                    {% if rifa.video_url and ('youtube.com' in rifa.video_url or 'youtu.be' in rifa.video_url) %}
 
                         {# ============================================
                            CON VIDEO DE YOUTUBE: imagen + iframe en hover
@@ -939,16 +952,53 @@
 
 <script>
 
-        // ============================================================
-    // VIDEO EN TARJETAS DE RIFAS
+    // ============================================================
+    // DETECCIÓN DEL PRIMER CLICK
     //
-    // Desktop: se reproduce en HOVER con audio
-    // Móvil: se reproduce al entrar en pantalla (muted por
-    //        restricciones del navegador)
+    // Chrome/Edge/Firefox/Safari bloquean el autoplay con audio
+    // hasta que el usuario hace un click. Detectamos ese primer
+    // click para desbloquear el audio en los siguientes hovers.
     // ============================================================
 
-    // Detectar si el dispositivo soporta hover real (no táctil)
+    window.__audioDesbloqueado = false;
+
+    function desbloquearAudio() {
+
+        if (window.__audioDesbloqueado) return;
+
+        window.__audioDesbloqueado = true;
+
+        try {
+
+            const audioDesbloqueo = document.createElement('audio');
+            audioDesbloqueo.src = 'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=';
+            audioDesbloqueo.volume = 0;
+            audioDesbloqueo.play().catch(function() {});
+
+        } catch (e) {}
+
+        console.log('🔊 Audio desbloqueado. Ahora los hovers tendrán sonido.');
+
+    }
+
+    document.addEventListener('click', desbloquearAudio, { once: true });
+    document.addEventListener('touchstart', desbloquearAudio, { once: true });
+    document.addEventListener('keydown', desbloquearAudio, { once: true });
+
+
+    // ============================================================
+    // DETECCIÓN DE DISPOSITIVO CON HOVER
+    // ============================================================
+
     const soportaHover = window.matchMedia('(hover: hover)').matches;
+
+
+    // ============================================================
+    // VIDEO EN TARJETAS DE RIFAS
+    //
+    // Desktop: se reproduce en HOVER con audio (si está desbloqueado)
+    // Móvil: se reproduce al entrar en pantalla (muted)
+    // ============================================================
 
     document.querySelectorAll('.rifa-media').forEach(function(media) {
 
@@ -1002,17 +1052,22 @@
             }
 
             if (soportaHover) {
+
                 media.addEventListener('mouseenter', iniciarYouTube);
                 media.addEventListener('mouseleave', detenerYouTube);
+
             } else {
-                // En móvil, solo reproducir cuando se toca
+
                 media.addEventListener('click', function(e) {
+
                     if (iframeElement) {
                         detenerYouTube();
                     } else {
                         iniciarYouTube();
                     }
+
                 });
+
             }
 
             return;
@@ -1031,8 +1086,18 @@
 
             if (reproduciendoConAudio) return;
 
-            // Quitar muted para reproducir con audio
-            video.muted = false;
+            // Si el usuario ya hizo click antes → reproducir con audio
+            // Si no → reproducir muted (Chrome bloquea autoplay con audio)
+            if (window.__audioDesbloqueado) {
+
+                video.muted = false;
+
+            } else {
+
+                video.muted = true;
+
+            }
+
             video.loop = true;
 
             const promesa = video.play();
@@ -1046,17 +1111,7 @@
 
                 }).catch(function(err) {
 
-                    // El navegador bloqueó el audio → reproducir muted
-                    console.log('Audio bloqueado, reproduciendo muted:', err);
-
-                    video.muted = true;
-
-                    video.play().then(function() {
-                        reproduciendoConAudio = true;
-                        media.classList.add('reproduciendo');
-                    }).catch(function(e) {
-                        console.log('Autoplay bloqueado completamente:', e);
-                    });
+                    console.log('Error al reproducir:', err);
 
                 });
 
@@ -1070,7 +1125,6 @@
 
             video.pause();
             video.currentTime = 0;
-            video.muted = true;
             reproduciendoConAudio = false;
             media.classList.remove('reproduciendo');
 
@@ -1078,13 +1132,11 @@
 
         if (soportaHover) {
 
-            // DESKTOP: hover → play con audio
             media.addEventListener('mouseenter', iniciarVideo);
             media.addEventListener('mouseleave', detenerVideo);
 
         } else {
 
-            // MÓVIL: Intersection Observer → play muted al entrar en viewport
             const observer = new IntersectionObserver(function(entries) {
 
                 entries.forEach(function(entry) {
@@ -1110,7 +1162,7 @@
                 });
 
             }, {
-                threshold: 0.6  // 60% del video visible para activar
+                threshold: 0.6
             });
 
             observer.observe(media);
@@ -1150,6 +1202,7 @@
                 });
         });
     }
+
 
     // ============================================================
     // BANNER DE INSTALACIÓN PWA
