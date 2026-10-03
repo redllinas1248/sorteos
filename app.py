@@ -1,5 +1,7 @@
 import os
 import secrets
+import cloudinary
+import cloudinary.uploader
 from werkzeug.security import generate_password_hash
 from datetime import (
     datetime,
@@ -61,6 +63,16 @@ STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
 
 stripe.api_key = STRIPE_SECRET_KEY
 
+# ============================================================
+# CLOUDINARY
+# ============================================================
+
+cloudinary.config(
+    cloud_name=os.getenv("CLOUDINARY_CLOUD_NAME", ""),
+    api_key=os.getenv("CLOUDINARY_API_KEY", ""),
+    api_secret=os.getenv("CLOUDINARY_API_SECRET", ""),
+    secure=True
+)
 
 # ============================================================
 # ZONA HORARIA
@@ -2217,6 +2229,7 @@ def crear_rifa():
     titulo = request.form.get("titulo", "").strip()
     descripcion = request.form.get("descripcion", "").strip()
     imagen_url = request.form.get("imagen_url", "").strip()
+    video_url_input = request.form.get("video_url", "").strip()
     cantidad_boletos = request.form.get("cantidad_boletos", "").strip()
     precio_boleto = request.form.get("precio_boleto", "").strip()
     fecha_inicio = request.form.get("fecha_inicio", "").strip()
@@ -2244,13 +2257,45 @@ def crear_rifa():
         flash("El precio del boleto debe ser mayor que cero.", "error")
         return redirect(url_for("nueva_rifa"))
 
+    # ----------------------------------------------------
+    # Manejo del video: subir archivo o usar URL
+    # ----------------------------------------------------
+
+    video_url = None
+
+    video_file = request.files.get("video_file")
+
+    if video_file and video_file.filename:
+
+        # Hay archivo subido → subir a Cloudinary
+        try:
+            upload_result = cloudinary.uploader.upload(
+                video_file,
+                resource_type="video",
+                folder="sorteos/videos",
+                transformation=[
+                    {"width": 720, "height": 720, "crop": "limit"},
+                    {"quality": "auto:good"},
+                ],
+            )
+            video_url = upload_result.get("secure_url")
+
+        except Exception as error:
+            print("ERROR CLOUDINARY:", error)
+            flash("No se pudo subir el video. Se guardará sin video.", "error")
+
+    elif video_url_input:
+
+        # No hay archivo pero sí URL → usar la URL (YouTube o directo)
+        video_url = video_url_input
+
     db = get_db()
 
     try:
 
         cursor = db.cursor()
 
-        # Validar que el propietario exista (si no es "admin")
+        # Validar propietario
         if propietario_slug != "admin":
             cursor.execute("""
                 SELECT id FROM sp_admins
@@ -2262,17 +2307,16 @@ def crear_rifa():
                 flash("El propietario seleccionado no existe o está inactivo.", "error")
                 return redirect(url_for("nueva_rifa"))
 
-        # Crear la rifa con propietario
         cursor.execute("""
             INSERT INTO sp_rifas (
-                titulo, descripcion, imagen_url,
+                titulo, descripcion, imagen_url, video_url,
                 cantidad_boletos, precio_boleto, estado,
                 fecha_inicio, fecha_fin, fecha_sorteo,
                 propietario_slug,
                 creado_en, actualizado_en
             )
             VALUES (
-                %s, %s, %s, %s, %s, 'borrador',
+                %s, %s, %s, %s, %s, %s, 'borrador',
                 NULLIF(%s, '')::timestamp,
                 NULLIF(%s, '')::timestamp,
                 NULLIF(%s, '')::timestamp,
@@ -2281,7 +2325,7 @@ def crear_rifa():
             )
             RETURNING id
         """, (
-            titulo, descripcion, imagen_url,
+            titulo, descripcion, imagen_url, video_url,
             cantidad_boletos, precio_boleto,
             fecha_inicio, fecha_fin, fecha_sorteo,
             propietario_slug
@@ -2289,7 +2333,6 @@ def crear_rifa():
 
         rifa_id = cursor.fetchone()["id"]
 
-        # Crear boletos
         for numero in range(1, cantidad_boletos + 1):
             cursor.execute("""
                 INSERT INTO sp_boletos (
@@ -2385,12 +2428,14 @@ def actualizar_rifa(rifa_id):
     titulo = request.form.get("titulo", "").strip()
     descripcion = request.form.get("descripcion", "").strip()
     imagen_url = request.form.get("imagen_url", "").strip()
+    video_url_input = request.form.get("video_url", "").strip()
     cantidad_boletos = request.form.get("cantidad_boletos", "").strip()
     precio_boleto = request.form.get("precio_boleto", "").strip()
     fecha_inicio = request.form.get("fecha_inicio", "").strip()
     fecha_fin = request.form.get("fecha_fin", "").strip()
     fecha_sorteo = request.form.get("fecha_sorteo", "").strip()
     propietario_slug = request.form.get("propietario_slug", "admin").strip().lower() or "admin"
+    quitar_video = request.form.get("quitar_video") == "on"
 
     if not titulo:
         flash("El título del sorteo es obligatorio.", "error")
@@ -2412,13 +2457,56 @@ def actualizar_rifa(rifa_id):
         flash("El precio del boleto no es válido.", "error")
         return redirect(url_for("editar_rifa", rifa_id=rifa_id))
 
+    # ----------------------------------------------------
+    # Manejo del video
+    # ----------------------------------------------------
+
     db = get_db()
 
     try:
 
         cursor = db.cursor()
 
-        # Validar propietario si no es "admin"
+        # Obtener video actual
+        cursor.execute(
+            "SELECT video_url FROM sp_rifas WHERE id = %s",
+            (rifa_id,)
+        )
+        rifa_actual = cursor.fetchone()
+
+        if not rifa_actual:
+            flash("El sorteo no existe.", "error")
+            return redirect(url_for("admin_rifas"))
+
+        video_url = rifa_actual["video_url"]
+
+        # Si pide quitar el video, se anula
+        if quitar_video:
+            video_url = None
+
+        # Si sube archivo nuevo → reemplaza
+        video_file = request.files.get("video_file")
+        if video_file and video_file.filename:
+            try:
+                upload_result = cloudinary.uploader.upload(
+                    video_file,
+                    resource_type="video",
+                    folder="sorteos/videos",
+                    transformation=[
+                        {"width": 720, "height": 720, "crop": "limit"},
+                        {"quality": "auto:good"},
+                    ],
+                )
+                video_url = upload_result.get("secure_url")
+            except Exception as error:
+                print("ERROR CLOUDINARY:", error)
+                flash("No se pudo subir el video nuevo.", "error")
+
+        # Si pega URL de YouTube → reemplaza
+        elif video_url_input and not quitar_video:
+            video_url = video_url_input
+
+        # Validar propietario
         if propietario_slug != "admin":
             cursor.execute("""
                 SELECT id FROM sp_admins
@@ -2436,6 +2524,7 @@ def actualizar_rifa(rifa_id):
                 titulo = %s,
                 descripcion = %s,
                 imagen_url = %s,
+                video_url = %s,
                 cantidad_boletos = %s,
                 precio_boleto = %s,
                 fecha_inicio = NULLIF(%s, '')::timestamp,
@@ -2445,7 +2534,7 @@ def actualizar_rifa(rifa_id):
                 actualizado_en = NOW()
             WHERE id = %s
         """, (
-            titulo, descripcion, imagen_url,
+            titulo, descripcion, imagen_url, video_url,
             cantidad_boletos, precio_boleto,
             fecha_inicio, fecha_fin, fecha_sorteo,
             propietario_slug,
