@@ -330,7 +330,7 @@
             color: #8b5cf6;
         }
 
-        /* ============================================
+                /* ============================================
            RIFA MEDIA (imagen + video hover)
         ============================================ */
 
@@ -361,6 +361,16 @@
             padding: 0;
         }
 
+        /* Video preview (estático, primer frame) */
+        .rifa-media .rifa-video {
+            width: 100%;
+            height: 220px;
+            object-fit: contain;
+            display: block;
+            background: #0a0d18;
+        }
+
+        /* Contenedor de video hover (YouTube) */
         .rifa-video-hover {
             position: absolute;
             inset: 0;
@@ -402,6 +412,22 @@
 
         .rifa-media:hover .rifa-img {
             opacity: 0;
+        }
+
+        /* Indicador de audio en hover */
+        .rifa-media.reproduciendo::before {
+            content: '🔊';
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.75);
+            color: white;
+            font-size: 14px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            z-index: 3;
+            backdrop-filter: blur(4px);
+            animation: fadeInVideo 0.3s ease;
         }
 
         .rifa-contenido {
@@ -676,15 +702,15 @@
 
                 <div class="rifa">
 
-                    {% if rifa.video_url %}
+                                        {% if rifa.video_url and ('youtube.com' in rifa.video_url or 'youtu.be' in rifa.video_url) %}
 
                         {# ============================================
-                           CON VIDEO: muestra imagen con video en hover
+                           CON VIDEO DE YOUTUBE: imagen + iframe en hover
                         ============================================ #}
 
                         <div class="rifa-media"
                              data-video-url="{{ rifa.video_url }}"
-                             data-es-youtube="{% if 'youtube.com' in rifa.video_url or 'youtu.be' in rifa.video_url %}1{% else %}0{% endif %}">
+                             data-es-youtube="1">
 
                             {% if rifa.imagen_url %}
                                 <img
@@ -697,6 +723,29 @@
                             {% endif %}
 
                             <div class="rifa-video-hover" style="display: none;"></div>
+
+                            <div class="rifa-video-badge">▶ Video</div>
+
+                        </div>
+
+                    {% elif rifa.video_url %}
+
+                        {# ============================================
+                           CON VIDEO DIRECTO (Cloudinary): primer frame
+                           como preview, se reproduce en hover con audio
+                        ============================================ #}
+
+                        <div class="rifa-media"
+                             data-video-url="{{ rifa.video_url }}"
+                             data-es-youtube="0">
+
+                            <video
+                                class="rifa-video"
+                                src="{{ rifa.video_url }}"
+                                preload="metadata"
+                                playsinline
+                                muted
+                            ></video>
 
                             <div class="rifa-video-badge">▶ Video</div>
 
@@ -890,83 +939,183 @@
 
 <script>
 
+        // ============================================================
+    // VIDEO EN TARJETAS DE RIFAS
+    //
+    // Desktop: se reproduce en HOVER con audio
+    // Móvil: se reproduce al entrar en pantalla (muted por
+    //        restricciones del navegador)
     // ============================================================
-    // VIDEO EN HOVER DE TARJETAS DE RIFAS
-    // ============================================================
+
+    // Detectar si el dispositivo soporta hover real (no táctil)
+    const soportaHover = window.matchMedia('(hover: hover)').matches;
 
     document.querySelectorAll('.rifa-media').forEach(function(media) {
 
         const videoUrl = media.dataset.videoUrl;
         const esYouTube = media.dataset.esYoutube === '1';
-        const contenedorVideo = media.querySelector('.rifa-video-hover');
 
-        if (!videoUrl || !contenedorVideo) return;
+        if (!videoUrl) return;
 
-        let videoElement = null;
+        // ----------------------------------------------------
+        // CASO 1: Video de YouTube (iframe en hover)
+        // ----------------------------------------------------
 
-        function iniciarVideo() {
+        if (esYouTube) {
 
-            if (videoElement) return;
+            const contenedorVideo = media.querySelector('.rifa-video-hover');
+            if (!contenedorVideo) return;
 
-            if (esYouTube) {
+            let iframeElement = null;
+
+            function iniciarYouTube() {
+
+                if (iframeElement) return;
 
                 const videoId = extraerYouTubeId(videoUrl);
-
                 if (!videoId) return;
 
                 contenedorVideo.innerHTML =
                     '<iframe ' +
                     'src="https://www.youtube.com/embed/' + videoId +
-                    '?autoplay=1&mute=1&loop=1&playlist=' + videoId +
-                    '&controls=0&showinfo=0&modestbranding=1&playsinline=1" ' +
+                    '?autoplay=1&mute=0&loop=1&playlist=' + videoId +
+                    '&controls=1&showinfo=0&modestbranding=1&playsinline=1" ' +
                     'allow="autoplay; encrypted-media" ' +
                     'allowfullscreen ' +
                     'frameborder="0"></iframe>';
 
-                videoElement = contenedorVideo.querySelector('iframe');
-
-            } else {
-
-                contenedorVideo.innerHTML =
-                    '<video ' +
-                    'src="' + videoUrl + '" ' +
-                    'autoplay ' +
-                    'muted ' +
-                    'loop ' +
-                    'playsinline ' +
-                    'preload="none"></video>';
-
-                videoElement = contenedorVideo.querySelector('video');
-
-                if (videoElement) {
-                    videoElement.play().catch(function(err) {
-                        console.log('Error al reproducir video:', err);
-                    });
-                }
+                iframeElement = contenedorVideo.querySelector('iframe');
+                contenedorVideo.style.display = 'block';
+                media.classList.add('reproduciendo');
 
             }
 
-            contenedorVideo.style.display = 'block';
+            function detenerYouTube() {
+
+                if (!iframeElement) return;
+
+                contenedorVideo.innerHTML = '';
+                contenedorVideo.style.display = 'none';
+                iframeElement = null;
+                media.classList.remove('reproduciendo');
+
+            }
+
+            if (soportaHover) {
+                media.addEventListener('mouseenter', iniciarYouTube);
+                media.addEventListener('mouseleave', detenerYouTube);
+            } else {
+                // En móvil, solo reproducir cuando se toca
+                media.addEventListener('click', function(e) {
+                    if (iframeElement) {
+                        detenerYouTube();
+                    } else {
+                        iniciarYouTube();
+                    }
+                });
+            }
+
+            return;
+        }
+
+        // ----------------------------------------------------
+        // CASO 2: Video directo (Cloudinary, mp4)
+        // ----------------------------------------------------
+
+        const video = media.querySelector('.rifa-video');
+        if (!video) return;
+
+        let reproduciendoConAudio = false;
+
+        function iniciarVideo() {
+
+            if (reproduciendoConAudio) return;
+
+            // Quitar muted para reproducir con audio
+            video.muted = false;
+            video.loop = true;
+
+            const promesa = video.play();
+
+            if (promesa !== undefined) {
+
+                promesa.then(function() {
+
+                    reproduciendoConAudio = true;
+                    media.classList.add('reproduciendo');
+
+                }).catch(function(err) {
+
+                    // El navegador bloqueó el audio → reproducir muted
+                    console.log('Audio bloqueado, reproduciendo muted:', err);
+
+                    video.muted = true;
+
+                    video.play().then(function() {
+                        reproduciendoConAudio = true;
+                        media.classList.add('reproduciendo');
+                    }).catch(function(e) {
+                        console.log('Autoplay bloqueado completamente:', e);
+                    });
+
+                });
+
+            }
 
         }
 
         function detenerVideo() {
 
-            if (!videoElement) return;
+            if (!reproduciendoConAudio) return;
 
-            if (videoElement.tagName === 'VIDEO') {
-                videoElement.pause();
-                videoElement.currentTime = 0;
-            }
-
-            contenedorVideo.innerHTML = '';
-            contenedorVideo.style.display = 'none';
-            videoElement = null;
+            video.pause();
+            video.currentTime = 0;
+            video.muted = true;
+            reproduciendoConAudio = false;
+            media.classList.remove('reproduciendo');
 
         }
 
-        media.addEventListener('mouseenter', iniciarVideo);
-        media.addEventListener('mouseleave', detenerVideo);
+        if (soportaHover) {
+
+            // DESKTOP: hover → play con audio
+            media.addEventListener('mouseenter', iniciarVideo);
+            media.addEventListener('mouseleave', detenerVideo);
+
+        } else {
+
+            // MÓVIL: Intersection Observer → play muted al entrar en viewport
+            const observer = new IntersectionObserver(function(entries) {
+
+                entries.forEach(function(entry) {
+
+                    if (entry.isIntersecting) {
+
+                        video.muted = true;
+                        video.loop = true;
+                        video.play().catch(function(err) {
+                            console.log('Autoplay móvil bloqueado:', err);
+                        });
+
+                        media.classList.add('reproduciendo');
+
+                    } else {
+
+                        video.pause();
+                        video.currentTime = 0;
+                        media.classList.remove('reproduciendo');
+
+                    }
+
+                });
+
+            }, {
+                threshold: 0.6  // 60% del video visible para activar
+            });
+
+            observer.observe(media);
+
+        }
 
     });
 
