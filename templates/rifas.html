@@ -1157,7 +1157,13 @@
             media.addEventListener('mouseenter', iniciarVideo);
             media.addEventListener('mouseleave', detenerVideo);
 
-        } else {
+                } else {
+
+            // ====================================================
+            // MÓVIL: autoplay muted al entrar + audio al tocar
+            // ====================================================
+
+            let audioMovilActivado = false;
 
             const observer = new IntersectionObserver(function(entries) {
 
@@ -1165,7 +1171,7 @@
 
                     if (entry.isIntersecting) {
 
-                        video.muted = true;
+                        video.muted = !audioMovilActivado;
                         video.loop = true;
                         video.play().catch(function(err) {
                             console.log('Autoplay móvil bloqueado:', err);
@@ -1188,6 +1194,30 @@
             });
 
             observer.observe(media);
+
+            // ------------------------------------------------
+            // Al TOCAR el video → activar audio
+            // ------------------------------------------------
+
+            media.addEventListener('touchstart', function(e) {
+
+                if (!audioMovilActivado) {
+
+                    e.preventDefault();
+
+                    audioMovilActivado = true;
+
+                    video.muted = false;
+                    video.currentTime = 0;
+                    video.play().catch(function(err) {
+                        console.log('Error al activar audio móvil:', err);
+                    });
+
+                    mostrarTooltipAudio(media);
+
+                }
+
+            }, { passive: false });
 
         }
 
