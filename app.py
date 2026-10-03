@@ -2280,9 +2280,9 @@ def crear_rifa():
             )
             video_url = upload_result.get("secure_url")
 
-        except Exception as error:
-            print("ERROR CLOUDINARY:", error)
-            flash("No se pudo subir el video. Se guardará sin video.", "error")
+            except Exception as error:
+            app.logger.error(f"ERROR CLOUDINARY: {error}")
+            flash(f"No se pudo subir el video: {error}", "error")
 
     elif video_url_input:
 
@@ -2498,9 +2498,9 @@ def actualizar_rifa(rifa_id):
                     ],
                 )
                 video_url = upload_result.get("secure_url")
-            except Exception as error:
-                print("ERROR CLOUDINARY:", error)
-                flash("No se pudo subir el video nuevo.", "error")
+                except Exception as error:
+                app.logger.error(f"ERROR CLOUDINARY: {error}")
+                flash(f"No se pudo subir el video nuevo: {error}", "error")
 
         # Si pega URL de YouTube → reemplaza
         elif video_url_input and not quitar_video:
