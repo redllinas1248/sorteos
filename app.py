@@ -302,6 +302,7 @@ def rifas():
                 titulo,
                 descripcion,
                 imagen_url,
+                video_url,
                 cantidad_boletos,
                 precio_boleto,
                 estado,
